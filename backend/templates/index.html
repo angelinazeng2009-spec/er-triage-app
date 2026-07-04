@@ -188,11 +188,14 @@
             
             <hr class="divider">
             <h3 class="section-title">⚙️ System Settings</h3>
-            <label class="input-label" style="margin-top:0;">Secure API Gateway Key</label>
-            <input type="password" id="apiKeyInput" class="form-control" placeholder="Paste Gemini API Key here...">
-            <button id="saveApiKeyBtn" class="btn btn-secondary w-100" style="margin-top:10px;">💾 Save API Key</button>
-            <p id="apiKeyStatus" class="sidebar-caption" style="margin-top:8px;">No Gemini API key configured.</p>
-            <p class="sidebar-caption" style="margin-top:4px;">Enter your Gemini API key once and it will be stored locally in your browser for this app.</p>
+            <div id="apiKeySection">
+                <label class="input-label" style="margin-top:0;">Secure API Gateway Key</label>
+                <input type="password" id="apiKeyInput" class="form-control" placeholder="Paste Gemini API Key here...">
+                <button id="saveApiKeyBtn" class="btn btn-secondary w-100" style="margin-top:10px;">💾 Save API Key</button>
+                <p id="apiKeyStatus" class="sidebar-caption" style="margin-top:8px;">No Gemini API key configured.</p>
+                <p class="sidebar-caption" style="margin-top:4px;">Enter your Gemini API key once and it will be stored locally in your browser for this app.</p>
+            </div>
+            <p id="serverKeyStatus" class="sidebar-caption" style="margin-top:8px; display:none; color:#34d399;">✓ API key configured by server.</p>
         </aside>
 
         <main class="main-content">
@@ -414,6 +417,16 @@
             document.getElementById("apiKeyInput").addEventListener("blur", saveApiKey);
             document.getElementById("apiKeyInput").addEventListener("keydown", handleApiKeyEnter);
             document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
+
+            fetch(`${apiBase}/api/config`).then(r => r.json()).then(cfg => {
+                if (cfg.server_key_configured) {
+                    document.getElementById("apiKeySection").style.display = "none";
+                    document.getElementById("serverKeyStatus").style.display = "block";
+                    window._serverKeyConfigured = true;
+                } else {
+                    loadStoredApiKey();
+                }
+            }).catch(() => loadStoredApiKey());
             
             recognitionSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
             if (!recognitionSupported) {
@@ -809,14 +822,14 @@
         }
 
         async function sendAudioToBackend(audioBlob, language, liveTranscript = "") {
-            const apiKey = document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "";
+            const apiKey = window._serverKeyConfigured ? "" : (document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "");
             const formData = new FormData();
             formData.append("audio_data", audioBlob, "recording.webm");
             formData.append("mime_type", audioBlob.type);
             formData.append("language", language);
             formData.append("api_key", apiKey);
 
-            if (!apiKey) {
+            if (!apiKey && !window._serverKeyConfigured) {
                 alert("Please enter your Gemini API key in the left sidebar before recording.");
                 return;
             }
@@ -882,7 +895,7 @@
             const rawText = document.getElementById("symptomText").value;
             const currentLang = document.getElementById("languageSelector").value;
             const patientName = document.getElementById("patientName").value;
-            const apiKey = document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "";
+            const apiKey = window._serverKeyConfigured ? "" : (document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "");
             const vitals = {
                 bp: `${document.getElementById("bpSystolic").value}/${document.getElementById("bpDiastolic").value}`,
                 hr: document.getElementById("heartRate").value,
@@ -908,7 +921,7 @@
             document.getElementById("processingSpinner").classList.remove("hidden");
             document.getElementById("triageResultViewport").innerHTML = "";
 
-            if (!apiKey) {
+            if (!apiKey && !window._serverKeyConfigured) {
                 document.getElementById("triageResultViewport").innerHTML = `<p class="muted-text">Please enter or save your Gemini API key before submitting triage.</p>`;
                 document.getElementById("processingSpinner").classList.add("hidden");
                 return;

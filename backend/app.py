@@ -101,6 +101,11 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/api/config')
+def config():
+    return jsonify({"server_key_configured": bool(API_KEY)})
+
+
 @app.route('/api/queue', methods=['GET'])
 def get_queue():
     triage_queue.sort(key=lambda p: (int(p["urgency_flag"].split("-")[1]), -p.get("risk_score", 0)))
