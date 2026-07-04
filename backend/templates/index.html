@@ -407,6 +407,7 @@
             configureLanguageContext();
             loadStoredApiKey();
             loadLiveQueue();
+            loadPatientHistory();
 
             document.getElementById("languageSelector").addEventListener("change", configureLanguageContext);
             document.getElementById("injectBtn").addEventListener("click", injectLanguageMockData);
@@ -488,7 +489,6 @@
                 const response = await fetch(`${apiBase}/api/queue`);
                 if (response.ok) {
                     triageQueue = await response.json();
-                    // Merge into history without duplicates
                     const existingIds = new Set(allPatientHistory.map(p => p.id));
                     triageQueue.forEach(p => { if (!existingIds.has(p.id)) allPatientHistory.push(p); });
                     updatePhysicianTelemetryView();
@@ -496,6 +496,17 @@
                 }
             } catch (err) {
                 console.error("Failed to connect to triage tracking API.", err);
+            }
+        }
+
+        async function loadPatientHistory() {
+            try {
+                const response = await fetch(`${apiBase}/api/history`);
+                if (response.ok) {
+                    allPatientHistory = await response.json();
+                }
+            } catch (err) {
+                console.error("Failed to load patient history.", err);
             }
         }
 

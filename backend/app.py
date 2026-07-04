@@ -1,29 +1,43 @@
 from flask import Flask, render_template, request, jsonify
 import os, time, requests, json, base64
 from triage import build_gemini_payload, process_triage_response
+from db import init_db, insert_patient, get_active_queue, admit_patient, get_all_patients
 
 app = Flask(__name__, template_folder="templates", static_folder=".")
 
 API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
-triage_queue = [
-    {
-        "id": "PT-4091",
-        "name": "José R. Silva",
-        "language": "Spanish",
-        "raw_symptoms": "Me duele mucho el pecho izquierdo...",
-        "translated_symptoms": "My left chest hurts and radiates to my arm...",
-        "anatomy": ["left chest", "arm"],
-        "vitals": ["pain: 9/10", "duration: 30m"],
-        "urgency_flag": "ESI-2",
-        "esi_label": "Level 2: Emergent",
-        "risk_score": 88,
-        "immediate_action": "ECG within 10 minutes",
-        "differentials": ["Acute Coronary Syndrome", "Pulmonary Embolism"],
-        "timestamp": time.strftime('%I:%M %p'),
-        "clinical_rationale": "Possible ACS or PE."
-    }
-]
+init_db()
+
+# Seed default patient if DB is empty
+def seed_default():
+    queue = get_active_queue()
+    if not queue:
+        import time as _time
+        insert_patient({
+            "id": "PT-4091",
+            "name": "José R. Silva",
+            "language": "Spanish",
+            "raw_symptoms": "Me duele mucho el pecho izquierdo...",
+            "translated_symptoms": "My left chest hurts and radiates to my arm...",
+            "anatomy": ["left chest", "arm"],
+            "vitals": ["pain: 9/10", "duration: 30m"],
+            "urgency_flag": "ESI-2",
+            "esi_label": "Level 2: Emergent",
+            "risk_score": 88,
+            "immediate_action": "ECG within 10 minutes",
+            "differentials": ["Acute Coronary Syndrome", "Pulmonary Embolism"],
+            "body_systems": ["cardiovascular"],
+            "follow_up_questions": [],
+            "clarification_summary": "",
+            "clinical_rationale": "Possible ACS or PE.",
+            "medical_history": "",
+            "clinical_notes": "",
+            "timestamp": _time.strftime('%I:%M %p'),
+        })
+
+seed_default()
+
 
 def get_api_key(data):
     return data.get("api_key") or API_KEY
@@ -51,33 +65,26 @@ def call_gemini_generate(payload, key, models=None, versions=None):
     if versions is None:
         versions = ["v1beta", "v1"]
 
-    method_order = ["generateContent"]
-
     attempts = []
     last_error = None
 
     for version in versions:
         for model in models:
-            for method in method_order:
-                url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:{method}?key={key}"
-                try:
-                    res = requests.post(url, json=payload, timeout=30)
-                    attempts.append({
-                        "url": url,
-                        "status_code": res.status_code,
-                        "body": res.text[:200]
-                    })
-                    res.raise_for_status()
-                    return res.json()
-                except requests.exceptions.HTTPError as e:
-                    last_error = e
-                    if e.response is not None and e.response.status_code in {404, 405, 429}:
-                        continue
-                    raise
-                except requests.exceptions.RequestException as e:
-                    last_error = e
-                    attempts.append({"url": url, "error": str(e)})
+            url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={key}"
+            try:
+                res = requests.post(url, json=payload, timeout=30)
+                attempts.append({"url": url, "status_code": res.status_code, "body": res.text[:200]})
+                res.raise_for_status()
+                return res.json()
+            except requests.exceptions.HTTPError as e:
+                last_error = e
+                if e.response is not None and e.response.status_code in {404, 405, 429}:
                     continue
+                raise
+            except requests.exceptions.RequestException as e:
+                last_error = e
+                attempts.append({"url": url, "error": str(e)})
+                continue
 
     message = "No supported Gemini model/method combination succeeded."
     if last_error is not None:
@@ -108,14 +115,17 @@ def config():
 
 @app.route('/api/queue', methods=['GET'])
 def get_queue():
-    triage_queue.sort(key=lambda p: (int(p["urgency_flag"].split("-")[1]), -p.get("risk_score", 0)))
-    return jsonify(triage_queue)
+    return jsonify(get_active_queue())
+
+
+@app.route('/api/history', methods=['GET'])
+def history():
+    return jsonify(get_all_patients())
 
 
 @app.route('/api/admit/<patient_id>', methods=['DELETE'])
 def admit(patient_id):
-    global triage_queue
-    triage_queue = [p for p in triage_queue if p["id"] != patient_id]
+    admit_patient(patient_id)
     return jsonify({"success": True})
 
 
@@ -149,16 +159,13 @@ def voice_intake():
 
     try:
         data = call_gemini_generate(payload, key)
-
         text = (
             data.get("candidates", [{}])[0]
             .get("content", {})
             .get("parts", [{}])[0]
             .get("text", "")
         )
-
         return jsonify({"success": True, "transcription": text})
-
     except requests.exceptions.HTTPError as e:
         response_text = e.response.text if e.response is not None else str(e)
         status_code = e.response.status_code if e.response is not None else 502
@@ -169,6 +176,7 @@ def voice_intake():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+# ---------------- CHECK CONDITION ----------------
 @app.route('/api/check-condition', methods=['OPTIONS'])
 def check_condition_options():
     return jsonify({"success": True}), 200
@@ -182,32 +190,24 @@ def check_condition():
     if not key:
         return jsonify({"success": False, "error": "Missing API key"}), 400
 
-    symptoms = data.get("symptoms", "")
-    medical_history = data.get("medical_history", "")
-    clinical_notes = data.get("clinical_notes", "")
-    name = data.get("name", "Patient")
-
     prompt = f"""
 You are an ER clinical reasoning assistant.
 Using only the information below, summarize the most likely condition or difficulty the patient is experiencing and list the top 2-3 possible problems.
 Do not provide medical advice, only a reasoned differential based on the symptoms.
 
-Patient: {name}
-Symptoms: {symptoms}
-Medical history: {medical_history}
-Clinical notes: {clinical_notes}
+Patient: {data.get("name", "Patient")}
+Symptoms: {data.get("symptoms", "")}
+Medical history: {data.get("medical_history", "")}
+Clinical notes: {data.get("clinical_notes", "")}
 
 Respond in a short plain text summary.
 """
-
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
     try:
-        data = call_gemini_generate(payload, key)
+        res_data = call_gemini_generate(payload, key)
         text = (
-            data.get("candidates", [{}])[0]
+            res_data.get("candidates", [{}])[0]
             .get("content", {})
             .get("parts", [{}])[0]
             .get("text", "")
@@ -237,7 +237,6 @@ def triage():
     if not key:
         return jsonify({"success": False, "error": "Missing API key"}), 400
 
-    # Group UI form items into the vitals dictionary expected by triage.py
     if "vitals" not in data or not isinstance(data["vitals"], dict):
         data["vitals"] = {
             "bp": f"{data.get('bpSystolic') or 'N/A'}/{data.get('bpDiastolic') or 'N/A'}",
@@ -247,23 +246,15 @@ def triage():
             "rr": data.get("respiratoryRate") or "N/A"
         }
 
-    # 1. Build payload using structured template config tools
     payload, generated_id, current_time = build_gemini_payload(data)
 
     try:
         res_data = call_gemini_generate(payload, key)
-
-        # 3. Complete structured generation transformation output mapping
         patient = process_triage_response(res_data, generated_id, current_time)
-
-        triage_queue.insert(0, patient)
+        insert_patient(patient)
         return jsonify({"success": True, "patient": patient})
-
     except requests.exceptions.RequestException as e:
-        error_msg = str(e)
-        if 'res' in locals() and res.text:
-            error_msg = res.text
-        return jsonify({"success": False, "error": f"API request failed: {error_msg}"}), 502
+        return jsonify({"success": False, "error": f"API request failed: {str(e)}"}), 502
     except Exception as e:
         return jsonify({"success": False, "error": f"Internal processing error: {str(e)}"}), 500
 
@@ -271,14 +262,12 @@ def triage():
 # ---------------- STATS ----------------
 @app.route('/api/stats')
 def stats():
+    queue = get_active_queue()
     return jsonify({
-        "total": len(triage_queue),
+        "total": len(queue),
         "esi_distribution": {
-            "ESI-1": len([p for p in triage_queue if p["urgency_flag"] == "ESI-1"]),
-            "ESI-2": len([p for p in triage_queue if p["urgency_flag"] == "ESI-2"]),
-            "ESI-3": len([p for p in triage_queue if p["urgency_flag"] == "ESI-3"]),
-            "ESI-4": len([p for p in triage_queue if p["urgency_flag"] == "ESI-4"]),
-            "ESI-5": len([p for p in triage_queue if p["urgency_flag"] == "ESI-5"])
+            f"ESI-{i}": len([p for p in queue if p["urgency_flag"] == f"ESI-{i}"])
+            for i in range(1, 6)
         }
     })
 
