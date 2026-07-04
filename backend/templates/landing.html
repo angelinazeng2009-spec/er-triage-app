@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseCare AI | Multilingual Emergency Triage</title>
+  <style>
+    :root {
+      --bg-main: #050816;
+      --surface: rgba(10, 16, 32, 0.72);
+      --surface-strong: rgba(255, 255, 255, 0.12);
+      --text-main: #f8fafc;
+      --text-muted: #a5b4fc;
+      --accent: #3b82f6;
+      --accent-2: #8b5cf6;
+      --success: #22c55e;
+      --border: rgba(255, 255, 255, 0.16);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+    }
+
+    [data-theme="light"] {
+      --bg-main: #f5f8ff;
+      --surface: rgba(255, 255, 255, 0.72);
+      --surface-strong: rgba(255, 255, 255, 0.9);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --accent: #2563eb;
+      --accent-2: #7c3aed;
+      --success: #0f766e;
+      --border: rgba(15, 23, 42, 0.08);
+      --shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-main);
+      background: radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 28%),
+                  radial-gradient(circle at 85% 0%, rgba(139,92,246,0.2), transparent 24%),
+                  var(--bg-main);
+      min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .page-shell {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 22px 40px;
+    }
+
+    .glass {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+      position: sticky;
+      top: 16px;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-badge {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 10px 30px rgba(59,130,246,0.25);
+    }
+
+    .topnav {
+      display: flex;
+      gap: 16px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .topnav a:hover { color: var(--text-main); }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill-btn, .ghost-btn {
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .accent-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .accent-picker input {
+      width: 26px;
+      height: 26px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .pill-btn:hover, .ghost-btn:hover { transform: translateY(-1px); border-color: var(--accent); }
+    .pill-btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; border: none; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      align-items: center;
+      padding: 34px;
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(30px);
+      opacity: 0.35;
+      pointer-events: none;
+      animation: drift 10s ease-in-out infinite alternate;
+    }
+
+    .hero::before {
+      width: 260px;
+      height: 260px;
+      background: var(--accent);
+      top: -80px;
+      right: -60px;
+    }
+
+    .hero::after {
+      width: 220px;
+      height: 220px;
+      background: var(--accent-2);
+      bottom: -90px;
+      left: -40px;
+      animation-duration: 12s;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: rgba(59,130,246,0.14);
+      color: var(--text-main);
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1.05;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin-bottom: 24px;
+    }
+
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .stat-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+    }
+
+    .stat-card strong { display: block; font-size: 1.15rem; margin-bottom: 4px; }
+    .stat-card span { color: var(--text-muted); font-size: 0.9rem; }
+
+    .preview-card {
+      padding: 20px;
+      border-radius: 28px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      transform: perspective(900px) rotateY(-8deg);
+      box-shadow: var(--shadow);
+      animation: float 5s ease-in-out infinite alternate;
+    }
+
+    .preview-card h3 { margin-bottom: 12px; font-size: 1.1rem; }
+    .preview-list { display: grid; gap: 10px; }
+    .preview-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.07);
+      color: var(--text-muted);
+    }
+
+    .section-grid { display: grid; gap: 18px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 18px; }
+    .feature-card, .coming-card {
+      padding: 20px;
+      border-radius: 24px;
+      transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+
+    .feature-card:hover, .coming-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+
+    .chat-toggle {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 50;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      box-shadow: 0 14px 40px rgba(59,130,246,0.28);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .chat-panel {
+      position: fixed;
+      right: 22px;
+      bottom: 88px;
+      width: min(390px, calc(100vw - 24px));
+      max-height: min(70vh, 620px);
+      display: none;
+      flex-direction: column;
+      border-radius: 24px;
+      overflow: hidden;
+      z-index: 60;
+    }
+
+    .chat-panel.open { display: flex; }
+    .chat-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: rgba(255,255,255,0.08); }
+    .chat-header p { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+    .chat-close { border: none; background: transparent; color: var(--text-main); font-size: 1.2rem; cursor: pointer; }
+    .chat-messages { padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; background: rgba(255,255,255,0.03); }
+    .bubble { max-width: 85%; padding: 10px 12px; border-radius: 14px; line-height: 1.45; font-size: 0.95rem; }
+    .bubble.user { align-self: flex-end; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; }
+    .bubble.assistant { align-self: flex-start; background: rgba(255,255,255,0.1); color: var(--text-main); }
+    .quick-prompts { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 14px 12px; }
+    .quick-prompts button { border: 1px solid var(--border); background: rgba(255,255,255,0.06); color: var(--text-main); border-radius: 999px; padding: 7px 10px; cursor: pointer; }
+    .chat-input-row { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+    .chat-input-row input { flex: 1; border: 1px solid var(--border); border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--text-main); padding: 10px 12px; }
+    .chat-input-row button { border: none; border-radius: 999px; background: var(--accent); color: white; padding: 10px 12px; cursor: pointer; }
+    .typing { color: var(--text-muted); font-size: 0.9rem; padding-left: 4px; }
+    .chat-api-note { padding: 10px 14px; font-size: 0.86rem; color: var(--text-muted); }
+
+    .feature-card h3, .coming-card h3 { margin-bottom: 10px; }
+    .feature-card p, .coming-card p { color: var(--text-muted); line-height: 1.6; }
+
+    .section-title {
+      margin: 26px 0 10px;
+      font-size: 1.45rem;
+      font-weight: 800;
+    }
+
+    .footer {
+      margin-top: 30px;
+      padding: 20px 24px;
+      border-radius: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .chip {
+      padding: 7px 10px;
+      font-size: 0.85rem;
+      border-radius: 999px;
+      background: rgba(59,130,246,0.14);
+      color: var(--text-main);
+    }
+
+    @keyframes float { from { transform: translateY(0px) perspective(900px) rotateY(-8deg); } to { transform: translateY(-8px) perspective(900px) rotateY(-5deg); } }
+    @keyframes drift { from { transform: translate3d(0,0,0); } to { transform: translate3d(16px, 16px, 0); } }
+
+    @media (max-width: 960px) {
+      .hero { grid-template-columns: 1fr; }
+      .section-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .page-shell { padding: 16px 14px 30px; }
+      .topbar { border-radius: 24px; flex-wrap: wrap; gap: 10px; }
+      .topnav { width: 100%; justify-content: center; }
+      .section-grid { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: 1fr; }
+      .hero { padding: 24px; }
+      .preview-card { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar glass">
+      <a class="brand" href="/">
+        <span class="brand-badge">✚</span>
+        <span>PulseCare AI</span>
+      </a>
+      <nav class="topnav">
+        <a href="#features">Features</a>
+        <a href="#upcoming">Upcoming</a>
+        <a href="/dashboard">Open dashboard</a>
+      </nav>
+      <div class="topbar-actions">
+        <label class="accent-picker" for="accentPicker">
+          <span>Accent</span>
+          <input id="accentPicker" type="color" value="#3b82f6" />
+        </label>
+        <button class="ghost-btn" id="themeToggle" type="button">🌙</button>
+        <button class="pill-btn primary" onclick="window.location.href='/dashboard'">Launch app</button>
+      </div>
+    </header>
+
+    <section class="hero glass">
+      <div>
+        <div class="eyebrow">AI-powered multilingual ER triage</div>
+        <h1>Bring calm, clarity, and speed to every emergency intake.</h1>
+        <p class="subtitle">PulseCare turns spoken symptoms, medical context, and rapid triage logic into a beautiful, intelligent workflow for clinical teams. It is crafted for modern healthcare environments that need speed, empathy, and a polished experience.</p>
+        <div class="hero-actions">
+          <a class="pill-btn primary" href="/dashboard">See live dashboard</a>
+          <a class="ghost-btn" href="#features">Explore features</a>
+        </div>
+        <div class="chip-row">
+          <span class="chip">• Morphic glass UI</span>
+          <span class="chip">• Live theme controls</span>
+          <span class="chip">• Voice-first intake</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <strong>98.7%</strong>
+            <span>diagnostic confidence</span>
+          </div>
+          <div class="stat-card">
+            <strong>5 min</strong>
+            <span>faster triage flow</span>
+          </div>
+          <div class="stat-card">
+            <strong>12+</strong>
+            <span>languages supported</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <h3>What the experience looks like</h3>
+        <div class="preview-list">
+          <div class="preview-item"><span>Multilingual voice intake</span><strong>Live</strong></div>
+          <div class="preview-item"><span>AI clinical reasoning</span><strong>Active</strong></div>
+          <div class="preview-item"><span>Priority queue monitoring</span><strong>Realtime</strong></div>
+          <div class="preview-item"><span>Custom color and theme</span><strong>Personalized</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <h2 class="section-title" id="features">Core product features</h2>
+    <div class="section-grid">
+      <article class="feature-card glass">
+        <h3>Voice-first intake</h3>
+        <p>Capture patient stories in real time with microphone-based recording, live transcription, and instant symptom structuring.</p>
+      </article>
+      <article class="feature-card glass">
+        <h3>Smart triage engine</h3>
+        <p>Generate ESI-style urgencies, clinical rationale, likely differentials, and recommended follow-up questions from one interaction.</p>
+      </article>
+      <article class="feature-card glass">
+        <h3>Operational visibility</h3>
+        <p>Track the triage queue, monitor patient priority levels, and inspect live analytics for operational decision support.</p>
+      </article>
+      <article class="feature-card glass">
+        <h3>Beautiful custom UI</h3>
+        <p>Enjoy a morphic landing page with animated cards, elegant transitions, and a color picker plus light/dark mode toggle.</p>
+      </article>
+      <article class="feature-card glass">
+        <h3>Secure API bridge</h3>
+        <p>Your Gemini API key is stored locally in the browser and used securely for the clinical reasoning workflows.</p>
+      </article>
+      <article class="feature-card glass">
+        <h3>Multilingual support</h3>
+        <p>Support for English, Spanish, Mandarin, Arabic, and more helps teams engage with diverse patient populations.</p>
+      </article>
+    </div>
+
+    <h2 class="section-title" id="upcoming">Upcoming features</h2>
+    <div class="section-grid">
+      <article class="coming-card glass">
+        <h3>Patient timeline view</h3>
+        <p>Visualize symptom progression, interventions, and follow-up milestones over time for each patient case.</p>
+      </article>
+      <article class="coming-card glass">
+        <h3>Care team collaboration</h3>
+        <p>Share live triage notes and escalate cases with a secure, role-based workflow for clinicians and coordinators.</p>
+      </article>
+      <article class="coming-card glass">
+        <h3>Predictive alerts</h3>
+        <p>Surface early-risk patterns and probable deterioration signals using richer patient history and situational context.</p>
+      </article>
+    </div>
+
+    <footer class="footer glass">
+      <span>Built with Flask, HTML, and CSS for a polished healthcare experience.</span>
+      <span>PulseCare AI • Launch app • Future-ready triage workflows</span>
+    </footer>
+  </div>
+
+  <button class="chat-toggle" id="chatToggle" type="button">💬 Ask PulseCare</button>
+  <div class="chat-panel glass" id="chatPanel">
+    <div class="chat-header">
+      <div>
+        <strong>PulseCare AI</strong>
+        <p>Friendly help for the app and triage flow</p>
+      </div>
+      <button class="chat-close" id="chatClose" type="button">×</button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="quick-prompts">
+      <button type="button" data-prompt="How does PulseCare work?">How does it work?</button>
+      <button type="button" data-prompt="What features are available?">Features</button>
+      <button type="button" data-prompt="What is coming next for this app?">Upcoming</button>
+    </div>
+    <div class="chat-api-note" id="chatApiNote">Use your Gemini API key to enable live answers.</div>
+    <div class="chat-input-row">
+      <input id="chatInput" type="text" placeholder="Ask something about the app..." />
+      <button id="chatSend" type="button">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const accentPicker = document.getElementById('accentPicker');
+    const savedTheme = localStorage.getItem('pulsecare-theme') || 'dark';
+    const savedAccent = localStorage.getItem('pulsecare-accent') || '#3b82f6';
+
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+    accentPicker.value = savedAccent;
+    document.documentElement.style.setProperty('--accent', savedAccent);
+    document.documentElement.style.setProperty('--accent-2', savedAccent);
+    document.documentElement.style.setProperty('--blue-accent', savedAccent);
+
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('pulsecare-theme', nextTheme);
+      themeToggle.textContent = nextTheme === 'dark' ? '🌙' : '☀️';
+    });
+
+    accentPicker.addEventListener('input', (event) => {
+      const color = event.target.value;
+      document.documentElement.style.setProperty('--accent', color);
+      document.documentElement.style.setProperty('--accent-2', color);
+      document.documentElement.style.setProperty('--blue-accent', color);
+      localStorage.setItem('pulsecare-accent', color);
+    });
+
+    const chatToggle = document.getElementById('chatToggle');
+    const chatPanel = document.getElementById('chatPanel');
+    const chatClose = document.getElementById('chatClose');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatSend = document.getElementById('chatSend');
+    const chatApiNote = document.getElementById('chatApiNote');
+    const chatState = { messages: [{ role: 'assistant', content: 'Hi! I can explain the app, summarize the workflow, or answer questions about the dashboard.' }] };
+
+    function renderChatMessages() {
+      chatMessages.innerHTML = '';
+      chatState.messages.forEach(message => {
+        const bubble = document.createElement('div');
+        bubble.className = `bubble ${message.role}`;
+        bubble.textContent = message.content;
+        chatMessages.appendChild(bubble);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addChatMessage(role, content) {
+      chatState.messages.push({ role, content });
+      renderChatMessages();
+    }
+
+    function showTyping() {
+      chatMessages.insertAdjacentHTML('beforeend', '<div class="typing">PulseCare AI is thinking…</div>');
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function sendChatMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      addChatMessage('user', text);
+      chatInput.value = '';
+      showTyping();
+
+      const apiKey = localStorage.getItem('gemini_api_key') || '';
+      if (!apiKey) {
+        chatApiNote.textContent = 'Paste your Gemini API key in the dashboard to enable live replies.';
+        chatMessages.querySelector('.typing').remove();
+        addChatMessage('assistant', 'Your Gemini API key is not saved yet. Open the dashboard and save it in the settings panel, then try again.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/chatbot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, messages: chatState.messages, api_key: apiKey })
+        });
+        const result = await response.json();
+        chatMessages.querySelector('.typing').remove();
+        if (result.success) {
+          addChatMessage('assistant', result.reply || 'I can help with the app workflow and upcoming features.');
+        } else {
+          addChatMessage('assistant', result.error || 'I could not generate a reply.');
+        }
+      } catch (err) {
+        chatMessages.querySelector('.typing').remove();
+        addChatMessage('assistant', 'The assistant could not reach the backend right now.');
+      }
+    }
+
+    chatToggle.addEventListener('click', () => chatPanel.classList.toggle('open'));
+    chatClose.addEventListener('click', () => chatPanel.classList.remove('open'));
+    chatSend.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        sendChatMessage();
+      }
+    });
+    document.querySelectorAll('.quick-prompts button').forEach(button => {
+      button.addEventListener('click', () => {
+        chatInput.value = button.dataset.prompt;
+        sendChatMessage();
+      });
+    });
+
+    renderChatMessages();
+  </script>
+</body>
+</html>

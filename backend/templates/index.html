@@ -30,12 +30,53 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
         }
         
+<<<<<<< HEAD
         body { 
             background: radial-gradient(circle at 50% 0%, #0f172a 0%, var(--bg-main) 75%);
+=======
+        :root {
+            --bg-main: #060913;
+            --surface: rgba(15, 23, 42, 0.58);
+            --surface-strong: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --blue-accent: #3b82f6;
+            --green-accent: #10b981;
+            --border-glow: rgba(255, 255, 255, 0.08);
+            --esi1: #ef4444;
+            --esi2: #f97316;
+            --esi3: #eab308;
+            --esi4: #10b981;
+            --esi5: #3b82f6;
+        }
+
+        [data-theme="light"] {
+            --bg-main: #f5f8ff;
+            --surface: rgba(255, 255, 255, 0.82);
+            --surface-strong: rgba(255, 255, 255, 0.95);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --blue-accent: #2563eb;
+            --green-accent: #0f766e;
+            --border-glow: rgba(15, 23, 42, 0.08);
+            --esi1: #dc2626;
+            --esi2: #ea580c;
+            --esi3: #ca8a04;
+            --esi4: #0f766e;
+            --esi5: #2563eb;
+        }
+
+        body { 
+            background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.18) 0%, var(--bg-main) 75%);
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
             color: var(--text-main); 
             display: flex;
             min-height: 100vh;
             overflow: hidden;
+<<<<<<< HEAD
+=======
+            transition: background 0.3s ease, color 0.3s ease;
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
         }
 
         /* LAYOUT & GLASSMORPHISM CORE STRUCTURES */
@@ -43,14 +84,24 @@
         
         .sidebar { 
             width: 340px; 
+<<<<<<< HEAD
             background: rgba(15, 23, 42, 0.45);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
+=======
+            background: var(--surface);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
             border-right: 1px solid var(--border-glow);
             padding: 25px; 
             overflow-y: auto;
             flex-shrink: 0;
+<<<<<<< HEAD
             box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+=======
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
         }
         
         .main-content { 
@@ -61,9 +112,28 @@
             flex-direction: column;
         }
 
+<<<<<<< HEAD
         .header { margin-bottom: 25px; }
         .header h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; background: linear-gradient(120deg, #ffffff, #93c5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .header p { color: var(--text-muted); font-size: 0.95rem; }
+=======
+        .header {
+            margin-bottom: 18px;
+            padding: 16px 0 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .header h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; background: linear-gradient(120deg, var(--text-main), var(--blue-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { color: var(--text-muted); font-size: 0.95rem; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .mini-toggle, .mini-chip { border: 1px solid var(--border-glow); background: var(--surface-strong); color: var(--text-main); padding: 8px 12px; border-radius: 999px; cursor: pointer; }
+        .accent-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .accent-row input[type="color"] { width: 34px; height: 34px; border: none; background: transparent; padding: 0; cursor: pointer; }
+        .app-footer { margin-top: 20px; padding: 16px 18px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border-glow); color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
 
         .sidebar-title { color: #ffffff; font-size: 1.35rem; font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
         .sidebar-caption { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px; }
@@ -72,6 +142,7 @@
 
         /* GLASS CARD SPECIFICATION */
         .card { 
+<<<<<<< HEAD
             background: rgba(30, 41, 59, 0.25);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
@@ -82,21 +153,64 @@
             height: 100%; 
             transition: transform 0.2s, box-shadow 0.2s;
         }
+=======
+            background: var(--surface);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px; 
+            padding: 24px; 
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+            height: 100%; 
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        .card:hover { transform: translateY(-3px); border-color: var(--blue-accent); }
+
+        .chat-toggle { position: fixed; right: 20px; bottom: 20px; z-index: 50; border: none; padding: 12px 16px; border-radius: 999px; background: linear-gradient(135deg, var(--blue-accent), var(--green-accent)); color: white; box-shadow: 0 14px 40px rgba(59,130,246,0.28); cursor: pointer; font-weight: 700; }
+        .chat-panel { position: fixed; right: 20px; bottom: 82px; width: min(400px, calc(100vw - 24px)); max-height: min(70vh, 620px); display: none; flex-direction: column; border-radius: 24px; overflow: hidden; z-index: 60; background: var(--surface); border: 1px solid var(--border-glow); backdrop-filter: blur(18px); }
+        .chat-panel.open { display: flex; }
+        .chat-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: rgba(255,255,255,0.08); }
+        .chat-header p { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+        .chat-close { border: none; background: transparent; color: var(--text-main); font-size: 1.2rem; cursor: pointer; }
+        .chat-messages { padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; background: rgba(255,255,255,0.03); }
+        .bubble { max-width: 85%; padding: 10px 12px; border-radius: 14px; line-height: 1.45; font-size: 0.95rem; }
+        .bubble.user { align-self: flex-end; background: linear-gradient(135deg, var(--blue-accent), var(--green-accent)); color: white; }
+        .bubble.assistant { align-self: flex-start; background: rgba(255,255,255,0.1); color: var(--text-main); }
+        .quick-prompts { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 14px 12px; }
+        .quick-prompts button { border: 1px solid var(--border-glow); background: rgba(255,255,255,0.06); color: var(--text-main); border-radius: 999px; padding: 7px 10px; cursor: pointer; }
+        .chat-input-row { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border-glow); }
+        .chat-input-row input { flex: 1; border: 1px solid var(--border-glow); border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--text-main); padding: 10px 12px; }
+        .chat-input-row button { border: none; border-radius: 999px; background: var(--blue-accent); color: white; padding: 10px 12px; cursor: pointer; }
+        .typing { color: var(--text-muted); font-size: 0.9rem; padding-left: 4px; }
+        .chat-api-note { padding: 10px 14px; font-size: 0.86rem; color: var(--text-muted); }
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
         
         /* FORM INPUT ARCHITECTURE */
         .input-label { display: block; font-weight: 600; font-size: 0.75rem; margin-bottom: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.75px; }
         .form-control { 
             width: 100%; 
+<<<<<<< HEAD
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #f8fafc; 
             padding: 12px; 
             border-radius: 8px; 
+=======
+            background: var(--surface-strong);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-main); 
+            padding: 12px; 
+            border-radius: 10px; 
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
             margin-bottom: 15px; 
             font-size: 0.95rem; 
             transition: all 0.2s ease; 
         }
+<<<<<<< HEAD
         .form-control:focus { outline: none; border-color: var(--blue-accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); background: rgba(15, 23, 42, 0.8); }
+=======
+        .form-control:focus { outline: none; border-color: var(--blue-accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); background: rgba(255,255,255,0.12); }
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
         
         .checkbox-container { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #cbd5e1; cursor: pointer; margin-bottom: 15px; }
         .info-box { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); padding: 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; color: #cbd5e1; }
@@ -106,8 +220,13 @@
         .btn { padding: 12px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); transform: translateY(-1px); }
+<<<<<<< HEAD
         .btn-secondary { background: rgba(255, 255, 255, 0.05); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; margin-bottom: 15px; }
         .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+=======
+        .btn-secondary { background: rgba(255, 255, 255, 0.07); color: var(--text-main); border: 1px solid rgba(255, 255, 255, 0.12); width: 100%; margin-bottom: 15px; }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.22); }
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
         .btn-danger { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
         .w-100 { width: 100%; }
 
@@ -188,6 +307,7 @@
             
             <hr class="divider">
             <h3 class="section-title">⚙️ System Settings</h3>
+<<<<<<< HEAD
             <div id="apiKeySection">
                 <label class="input-label" style="margin-top:0;">Secure API Gateway Key</label>
                 <input type="password" id="apiKeyInput" class="form-control" placeholder="Paste Gemini API Key here...">
@@ -196,12 +316,35 @@
                 <p class="sidebar-caption" style="margin-top:4px;">Enter your Gemini API key once and it will be stored locally in your browser for this app.</p>
             </div>
             <p id="serverKeyStatus" class="sidebar-caption" style="margin-top:8px; display:none; color:#34d399;">✓ API key configured by server.</p>
+=======
+            <label class="input-label" style="margin-top:0;">Brand Color</label>
+            <div class="accent-row">
+                <input type="color" id="accentPicker" value="#3b82f6">
+                <span class="sidebar-caption" style="margin:0;">Pick a site accent color</span>
+            </div>
+            <label class="input-label" style="margin-top:10px;">Secure API Gateway Key</label>
+            <input type="password" id="apiKeyInput" class="form-control" placeholder="Paste Gemini API Key here...">
+            <button id="saveApiKeyBtn" class="btn btn-secondary w-100" style="margin-top:10px;">💾 Save API Key</button>
+            <p id="apiKeyStatus" class="sidebar-caption" style="margin-top:8px;">No Gemini API key configured.</p>
+            <p class="sidebar-caption" style="margin-top:4px;">Enter your Gemini API key once and it will be stored locally in your browser for this app.</p>
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
         </aside>
 
         <main class="main-content">
             <header class="header">
+<<<<<<< HEAD
                 <h1>🚨 ER Command Center: Multi-Language AI Triage</h1>
                 <p>Translating native symptoms, extracting clinical entities, and ranking Emergency Severity Indices (ESI) in real-time.</p>
+=======
+                <div>
+                    <h1>🚨 ER Command Center: Multi-Language AI Triage</h1>
+                    <p>Translating native symptoms, extracting clinical entities, and ranking Emergency Severity Indices (ESI) in real-time.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="mini-toggle" id="themeToggle" type="button">🌙</button>
+                    <a class="mini-chip" href="/">← Back to landing page</a>
+                </div>
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
             </header>
             
             <div class="tab-navigation">
@@ -374,9 +517,41 @@
                     <div class="col-6"><div class="card"><h4>🏥 Average Vitals Overview</h4><canvas id="vitalsChart"></canvas></div></div>
                 </div>
             </section>
+<<<<<<< HEAD
         </main>
     </div>
 
+=======
+            <footer class="app-footer">
+                <span>PulseCare AI • elegant triage workflows with immersive UI</span>
+                <span>Theme + accent settings are preserved on refresh</span>
+            </footer>
+        </main>
+    </div>
+
+    <button class="chat-toggle" id="chatToggle" type="button">💬 Ask PulseCare</button>
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+            <div>
+                <strong>PulseCare AI</strong>
+                <p>Friendly help for the app and workflow</p>
+            </div>
+            <button class="chat-close" id="chatClose" type="button">×</button>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="quick-prompts">
+            <button type="button" data-prompt="How does PulseCare work?">How does it work?</button>
+            <button type="button" data-prompt="What features are available?">Features</button>
+            <button type="button" data-prompt="What is coming next for this app?">Upcoming</button>
+        </div>
+        <div class="chat-api-note" id="chatApiNote">Use your Gemini API key to enable live answers.</div>
+        <div class="chat-input-row">
+            <input id="chatInput" type="text" placeholder="Ask something about the app..." />
+            <button id="chatSend" type="button">Send</button>
+        </div>
+    </div>
+
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
     <script>
         const LANG_PRESETS = {
             English: { text: "Please describe your symptoms clearly. Where do you feel pain? When did it start?", placeholder: "Pain 8/10, Duration 2 hours, Fever", sample: "I have a sharp pain in my lower right abdomen since this morning. I feel nauseous and I have a high temperature." },
@@ -404,10 +579,18 @@
         let allPatientHistory = [];
 
         document.addEventListener("DOMContentLoaded", () => {
+<<<<<<< HEAD
             configureLanguageContext();
             loadStoredApiKey();
             loadLiveQueue();
             loadPatientHistory();
+=======
+            initDashboardTheme();
+            initAccentControl();
+            configureLanguageContext();
+            loadStoredApiKey();
+            loadLiveQueue();
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
 
             document.getElementById("languageSelector").addEventListener("change", configureLanguageContext);
             document.getElementById("injectBtn").addEventListener("click", injectLanguageMockData);
@@ -418,6 +601,7 @@
             document.getElementById("apiKeyInput").addEventListener("blur", saveApiKey);
             document.getElementById("apiKeyInput").addEventListener("keydown", handleApiKeyEnter);
             document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
+<<<<<<< HEAD
 
             fetch(`${apiBase}/api/config`).then(r => r.json()).then(cfg => {
                 if (cfg.server_key_configured) {
@@ -428,6 +612,8 @@
                     loadStoredApiKey();
                 }
             }).catch(() => loadStoredApiKey());
+=======
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
             
             recognitionSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
             if (!recognitionSupported) {
@@ -442,6 +628,40 @@
             document.getElementById("lookupBtn").addEventListener("click", lookupPatientHistory);
         });
 
+<<<<<<< HEAD
+=======
+        function initDashboardTheme() {
+            const toggle = document.getElementById('themeToggle');
+            const savedTheme = localStorage.getItem('pulsecare-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (toggle) toggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+            if (toggle) {
+                toggle.addEventListener('click', () => {
+                    const nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', nextTheme);
+                    localStorage.setItem('pulsecare-theme', nextTheme);
+                    toggle.textContent = nextTheme === 'dark' ? '🌙' : '☀️';
+                });
+            }
+        }
+
+        function initAccentControl() {
+            const picker = document.getElementById('accentPicker');
+            const savedAccent = localStorage.getItem('pulsecare-accent') || '#3b82f6';
+            if (picker) {
+                picker.value = savedAccent;
+                document.documentElement.style.setProperty('--blue-accent', savedAccent);
+                document.documentElement.style.setProperty('--green-accent', savedAccent);
+                picker.addEventListener('input', (event) => {
+                    const color = event.target.value;
+                    document.documentElement.style.setProperty('--blue-accent', color);
+                    document.documentElement.style.setProperty('--green-accent', color);
+                    localStorage.setItem('pulsecare-accent', color);
+                });
+            }
+        }
+
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
         function saveApiKey() {
             const apiKeyValue = document.getElementById("apiKeyInput").value.trim();
             if (!apiKeyValue) {
@@ -482,15 +702,23 @@
             }
         }
 
+<<<<<<< HEAD
         const apiBase = window.location.origin;
+=======
+        const apiBase = 'http://127.0.0.1:5000';
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
 
         async function loadLiveQueue() {
             try {
                 const response = await fetch(`${apiBase}/api/queue`);
                 if (response.ok) {
                     triageQueue = await response.json();
+<<<<<<< HEAD
                     const existingIds = new Set(allPatientHistory.map(p => p.id));
                     triageQueue.forEach(p => { if (!existingIds.has(p.id)) allPatientHistory.push(p); });
+=======
+                    allPatientHistory = [...triageQueue];
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
                     updatePhysicianTelemetryView();
                     updateAnalyticsMetrics();
                 }
@@ -499,6 +727,7 @@
             }
         }
 
+<<<<<<< HEAD
         async function loadPatientHistory() {
             try {
                 const response = await fetch(`${apiBase}/api/history`);
@@ -510,6 +739,8 @@
             }
         }
 
+=======
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
         function filterQueue() {
             const searchTerm = document.getElementById("searchPatient").value.toLowerCase();
             const esiFilter = document.getElementById("filterESI").value;
@@ -835,20 +1066,32 @@
         }
 
         async function sendAudioToBackend(audioBlob, language, liveTranscript = "") {
+<<<<<<< HEAD
             const apiKey = window._serverKeyConfigured ? "" : (document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "");
+=======
+            const apiKey = document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "";
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
             const formData = new FormData();
             formData.append("audio_data", audioBlob, "recording.webm");
             formData.append("mime_type", audioBlob.type);
             formData.append("language", language);
             formData.append("api_key", apiKey);
 
+<<<<<<< HEAD
             if (!apiKey && !window._serverKeyConfigured) {
+=======
+            if (!apiKey) {
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
                 alert("Please enter your Gemini API key in the left sidebar before recording.");
                 return;
             }
 
             try {
+<<<<<<< HEAD
                 const apiBase = window.location.origin;
+=======
+                const apiBase = 'http://127.0.0.1:5000';
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
 
                 const response = await fetch(`${apiBase}/api/voice-intake`, {
                     method: 'POST',
@@ -908,7 +1151,11 @@
             const rawText = document.getElementById("symptomText").value;
             const currentLang = document.getElementById("languageSelector").value;
             const patientName = document.getElementById("patientName").value;
+<<<<<<< HEAD
             const apiKey = window._serverKeyConfigured ? "" : (document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "");
+=======
+            const apiKey = document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "";
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
             const vitals = {
                 bp: `${document.getElementById("bpSystolic").value}/${document.getElementById("bpDiastolic").value}`,
                 hr: document.getElementById("heartRate").value,
@@ -934,7 +1181,11 @@
             document.getElementById("processingSpinner").classList.remove("hidden");
             document.getElementById("triageResultViewport").innerHTML = "";
 
+<<<<<<< HEAD
             if (!apiKey && !window._serverKeyConfigured) {
+=======
+            if (!apiKey) {
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
                 document.getElementById("triageResultViewport").innerHTML = `<p class="muted-text">Please enter or save your Gemini API key before submitting triage.</p>`;
                 document.getElementById("processingSpinner").classList.add("hidden");
                 return;
@@ -964,9 +1215,12 @@
                     console.error("Triage pipeline error", errorMessage, result);
                 } else {
                     renderSingleOutputPanel(result.patient);
+<<<<<<< HEAD
                     if (!allPatientHistory.find(p => p.id === result.patient.id)) {
                         allPatientHistory.push(result.patient);
                     }
+=======
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
                     await loadLiveQueue();
                 }
             } catch (err) {
@@ -1051,6 +1305,90 @@
             }
         }
 
+<<<<<<< HEAD
+=======
+        const chatToggle = document.getElementById('chatToggle');
+        const chatPanel = document.getElementById('chatPanel');
+        const chatClose = document.getElementById('chatClose');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const chatSend = document.getElementById('chatSend');
+        const chatApiNote = document.getElementById('chatApiNote');
+        const chatState = { messages: [{ role: 'assistant', content: 'Hi! I can explain the app, summarize the workflow, or help you navigate the dashboard.' }] };
+
+        function renderChatMessages() {
+            chatMessages.innerHTML = '';
+            chatState.messages.forEach(message => {
+                const bubble = document.createElement('div');
+                bubble.className = `bubble ${message.role}`;
+                bubble.textContent = message.content;
+                chatMessages.appendChild(bubble);
+            });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addChatMessage(role, content) {
+            chatState.messages.push({ role, content });
+            renderChatMessages();
+        }
+
+        function showTyping() {
+            chatMessages.insertAdjacentHTML('beforeend', '<div class="typing">PulseCare AI is thinking…</div>');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            addChatMessage('user', text);
+            chatInput.value = '';
+            showTyping();
+
+            const apiKey = localStorage.getItem('gemini_api_key') || '';
+            if (!apiKey) {
+                chatApiNote.textContent = 'Save your Gemini API key in the sidebar to enable live replies.';
+                chatMessages.querySelector('.typing').remove();
+                addChatMessage('assistant', 'Your Gemini API key is not saved yet. Open the sidebar and save it, then try again.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/chatbot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, messages: chatState.messages, api_key: apiKey })
+                });
+                const result = await response.json();
+                chatMessages.querySelector('.typing').remove();
+                if (result.success) {
+                    addChatMessage('assistant', result.reply || 'I can help explain the workflow and features.');
+                } else {
+                    addChatMessage('assistant', result.error || 'I could not generate a reply.');
+                }
+            } catch (err) {
+                chatMessages.querySelector('.typing').remove();
+                addChatMessage('assistant', 'The assistant could not reach the backend right now.');
+            }
+        }
+
+        chatToggle.addEventListener('click', () => chatPanel.classList.toggle('open'));
+        chatClose.addEventListener('click', () => chatPanel.classList.remove('open'));
+        chatSend.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendChatMessage();
+            }
+        });
+        document.querySelectorAll('.quick-prompts button').forEach(button => {
+            button.addEventListener('click', () => {
+                chatInput.value = button.dataset.prompt;
+                sendChatMessage();
+            });
+        });
+        renderChatMessages();
+
+>>>>>>> 5cc4cb1 (Prepare deployment files and secure env usage)
         function renderOperationalCharts() {
             analyticsChartsInitialized = true;
             Chart.defaults.color = '#8892b0';

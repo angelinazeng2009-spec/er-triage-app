@@ -1,15 +1,19 @@
 from flask import Flask, render_template, request, jsonify
 import os, time, requests, json, base64
+from dotenv import load_dotenv
 from triage import build_gemini_payload, process_triage_response
 from db import init_db, insert_patient, get_active_queue, admit_patient, get_all_patients
 
-app = Flask(__name__, template_folder="templates", static_folder=".")
+load_dotenv()
 
-API_KEY = os.environ.get("GEMINI_API_KEY", "")
+app = Flask(__name__, template_folder="templates", static_folder=".")
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 init_db()
 
-# Seed default patient if DB is empty
+
 def seed_default():
     queue = get_active_queue()
     if not queue:
@@ -36,6 +40,7 @@ def seed_default():
             "timestamp": _time.strftime('%I:%M %p'),
         })
 
+
 seed_default()
 
 
@@ -47,6 +52,18 @@ def sanitize_mime_type(mime_type):
     if not mime_type:
         return "audio/webm"
     return mime_type.split(";")[0].strip()
+
+
+def extract_text_from_gemini_response(data):
+    try:
+        return (
+            data.get("candidates", [{}])[0]
+            .get("content", {})
+            .get("parts", [{}])[0]
+            .get("text", "")
+        )
+    except Exception:
+        return ""
 
 
 def call_gemini_generate(payload, key, models=None, versions=None):
@@ -65,26 +82,28 @@ def call_gemini_generate(payload, key, models=None, versions=None):
     if versions is None:
         versions = ["v1beta", "v1"]
 
+    method_order = ["generateContent"]
     attempts = []
     last_error = None
 
     for version in versions:
         for model in models:
-            url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={key}"
-            try:
-                res = requests.post(url, json=payload, timeout=30)
-                attempts.append({"url": url, "status_code": res.status_code, "body": res.text[:200]})
-                res.raise_for_status()
-                return res.json()
-            except requests.exceptions.HTTPError as e:
-                last_error = e
-                if e.response is not None and e.response.status_code in {404, 405, 429}:
+            for method in method_order:
+                url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:{method}?key={key}"
+                try:
+                    res = requests.post(url, json=payload, timeout=30)
+                    attempts.append({"url": url, "status_code": res.status_code, "body": res.text[:200]})
+                    res.raise_for_status()
+                    return res.json()
+                except requests.exceptions.HTTPError as e:
+                    last_error = e
+                    if e.response is not None and e.response.status_code in {404, 405, 429}:
+                        continue
+                    raise
+                except requests.exceptions.RequestException as e:
+                    last_error = e
+                    attempts.append({"url": url, "error": str(e)})
                     continue
-                raise
-            except requests.exceptions.RequestException as e:
-                last_error = e
-                attempts.append({"url": url, "error": str(e)})
-                continue
 
     message = "No supported Gemini model/method combination succeeded."
     if last_error is not None:
@@ -108,9 +127,74 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/dashboard')
+def dashboard():
+    return render_template('index.html')
+
+
 @app.route('/api/config')
 def config():
     return jsonify({"server_key_configured": bool(API_KEY)})
+
+
+@app.route('/api/chatbot', methods=['OPTIONS'])
+def chatbot_options():
+    return jsonify({"success": True}), 200
+
+
+@app.route('/api/chatbot', methods=['POST'])
+def chatbot():
+    data = request.get_json() or {}
+    key = get_api_key(data)
+
+    if not key:
+        return jsonify({"success": False, "error": "Missing API key"}), 400
+
+    messages = data.get("messages", []) or []
+    latest_message = data.get("message", "") or ""
+
+    if not latest_message and messages:
+        latest_message = messages[-1].get("content", "") if isinstance(messages[-1], dict) else ""
+
+    if not latest_message:
+        return jsonify({"success": False, "error": "No message provided"}), 400
+
+    conversation = []
+    for item in messages[-8:]:
+        if isinstance(item, dict):
+            role = item.get("role", "user")
+            content = item.get("content", "")
+            if content:
+                conversation.append(f"{role}: {content}")
+
+    if latest_message:
+        conversation.append(f"user: {latest_message}")
+
+    prompt = f"""
+You are PulseCare AI, a helpful assistant for an emergency triage web app.
+Use the app context below to answer the user's question and keep responses useful, concise, and empathetic.
+
+App context:
+- This app helps teams manage multilingual emergency triage.
+- It supports voice intake, AI-generated clinical reasoning, live triage queue tracking, and analytics.
+- It includes a landing page, dashboard, theme controls, and a custom color picker.
+- The assistant should help users understand features, workflow, and next steps.
+- Do not provide medical diagnosis or emergency treatment instructions.
+
+Conversation history:
+{chr(10).join(conversation)}
+
+Assistant:
+"""
+
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
+    try:
+        res_data = call_gemini_generate(payload, key)
+        reply = extract_text_from_gemini_response(res_data).strip() or "I’m here to help with the PulseCare workflow. Ask me about the dashboard, triage flow, or app features."
+        return jsonify({"success": True, "reply": reply})
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @app.route('/api/queue', methods=['GET'])
@@ -273,5 +357,5 @@ def stats():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.getenv("PORT", 5000))
     app.run(debug=False, host="0.0.0.0", port=port)
