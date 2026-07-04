@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Multilingual Medical Triage Command Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* High-fidelity medical palette over dark space canvas */
+            --bg-main: #060913;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --blue-accent: #3b82f6;
+            --green-accent: #10b981;
+            --border-glow: rgba(255, 255, 255, 0.08);
+            
+            /* ESI Priority Spectrum Indicators */
+            --esi1: #ef4444;
+            --esi2: #f97316;
+            --esi3: #eab308;
+            --esi4: #10b981;
+            --esi5: #3b82f6;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+        }
+        
+        body { 
+            background: radial-gradient(circle at 50% 0%, #0f172a 0%, var(--bg-main) 75%);
+            color: var(--text-main); 
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* LAYOUT & GLASSMORPHISM CORE STRUCTURES */
+        .app-container { display: flex; width: 100%; height: 100vh; }
+        
+        .sidebar { 
+            width: 340px; 
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-glow);
+            padding: 25px; 
+            overflow-y: auto;
+            flex-shrink: 0;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+        }
+        
+        .main-content { 
+            flex: 1; 
+            padding: 30px; 
+            overflow-y: auto; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header { margin-bottom: 25px; }
+        .header h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; background: linear-gradient(120deg, #ffffff, #93c5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { color: var(--text-muted); font-size: 0.95rem; }
+
+        .sidebar-title { color: #ffffff; font-size: 1.35rem; font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        .sidebar-caption { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px; }
+        .section-title { font-size: 0.9rem; margin-top: 15px; margin-bottom: 10px; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; }
+        .divider { border: 0; border-top: 1px solid var(--border-glow); margin: 20px 0; }
+
+        /* GLASS CARD SPECIFICATION */
+        .card { 
+            background: rgba(30, 41, 59, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px; 
+            padding: 24px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+            height: 100%; 
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        /* FORM INPUT ARCHITECTURE */
+        .input-label { display: block; font-weight: 600; font-size: 0.75rem; margin-bottom: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.75px; }
+        .form-control { 
+            width: 100%; 
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc; 
+            padding: 12px; 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+            font-size: 0.95rem; 
+            transition: all 0.2s ease; 
+        }
+        .form-control:focus { outline: none; border-color: var(--blue-accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); background: rgba(15, 23, 42, 0.8); }
+        
+        .checkbox-container { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #cbd5e1; cursor: pointer; margin-bottom: 15px; }
+        .info-box { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); padding: 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; color: #cbd5e1; }
+        .voice-alert { background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.2); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #38bdf8; font-size: 0.9rem; }
+
+        /* INTERACTIVE OBJECTS & BUTTONS */
+        .btn { padding: 12px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); transform: translateY(-1px); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.05); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; margin-bottom: 15px; }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+        .btn-danger { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
+        .w-100 { width: 100%; }
+
+        /* NAVIGATION ELEMENTS */
+        .tab-navigation { display: flex; gap: 6px; border-bottom: 1px solid var(--border-glow); margin-bottom: 25px; padding-bottom: 4px; }
+        .tab-btn { background: none; border: none; color: var(--text-muted); padding: 10px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: 0.2s; border-radius: 6px; }
+        .tab-btn.active, .tab-btn:hover { color: white; background: rgba(255, 255, 255, 0.05); }
+        .tab-btn.active { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+        /* COMPONENT MATRIX SYSTEM */
+        .row { display: flex; gap: 24px; margin-bottom: 24px; }
+        .col-4 { flex: 1; }
+        .col-6 { flex: 1; }
+        
+        .metric-card h5 { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .metric-card h2 { font-size: 2rem; font-weight: 800; margin-bottom: 4px; color: #ffffff; }
+        .metric-card p { font-size: 0.85rem; font-weight: 500; }
+        .text-green { color: var(--green-accent); }
+        .text-blue { color: var(--blue-accent); }
+
+        /* CLINICAL TELEMETRY BADGING */
+        .esi-1, .esi-2, .esi-3, .esi-4, .esi-5 { padding: 14px; border-radius: 8px; margin-bottom: 15px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; }
+        .esi-1 { border-left: 5px solid var(--esi1); background: rgba(239, 68, 68, 0.1); color: #fca5a5; border-top: 1px solid rgba(239, 68, 68, 0.15); }
+        .esi-2 { border-left: 5px solid var(--esi2); background: rgba(249, 115, 22, 0.1); color: #fdbb2d; border-top: 1px solid rgba(249, 115, 22, 0.15); }
+        .esi-3 { border-left: 5px solid var(--esi3); background: rgba(234, 179, 8, 0.1); color: #fef08a; border-top: 1px solid rgba(234, 179, 8, 0.15); }
+        .esi-4 { border-left: 5px solid var(--esi4); background: rgba(16, 185, 129, 0.1); color: #a7f3d0; border-top: 1px solid rgba(16, 185, 129, 0.15); }
+        .esi-5 { border-left: 5px solid var(--esi5); background: rgba(59, 130, 246, 0.1); color: #bfdbfe; border-top: 1px solid rgba(59, 130, 246, 0.15); }
+
+        .anatomy-badge { background: rgba(139, 92, 246, 0.15); color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3); padding: 5px 10px; border-radius: 6px; font-weight: 600; margin-right: 6px; margin-top: 6px; font-size: 0.8rem; display: inline-block; }
+        .vital-badge { background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.3); padding: 5px 10px; border-radius: 6px; font-weight: 600; margin-right: 6px; margin-top: 6px; font-size: 0.8rem; display: inline-block; }
+        
+        .display-box { background: rgba(15, 23, 42, 0.5); padding: 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 15px; line-height: 1.6; color: #e2e8f0; font-size: 0.95rem; }
+        .muted-text { color: var(--text-muted); font-size: 0.95rem; text-align: center; padding: 60px 0; }
+        
+        .spinner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; color: var(--blue-accent); font-weight: 600; padding: 40px 0; font-size: 0.9rem; }
+        .hidden { display: none !important; }
+        
+        summary { font-weight: 600; cursor: pointer; color: var(--blue-accent); padding: 5px 0; outline: none; font-size: 0.9rem; }
+        canvas { max-height: 220px; margin-top: 15px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <h2 class="sidebar-title">🏥 Intake Dashboard</h2>
+            <p class="sidebar-caption">AI Multilingual Triage Assistant | v1.1</p>
+            <hr class="divider">
+            
+            <div class="form-group">
+                <label class="input-label" for="languageSelector">Patient Native Language</label>
+                <select id="languageSelector" class="form-control">
+                    <option value="English">English</option>
+                    <option value="Spanish">Spanish</option>
+                    <option value="Mandarin">Mandarin</option>
+                    <option value="Arabic">Arabic</option>
+                    <option value="Vietnamese">Vietnamese</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="French">French</option>
+                    <option value="Portuguese">Portuguese</option>
+                    <option value="Japanese">Japanese</option>
+                    <option value="Korean">Korean</option>
+                    <option value="Russian">Russian</option>
+                    <option value="Tagalog">Tagalog</option>
+                    <option value="German">German</option>
+                </select>
+            </div>
+            
+            <h3 class="section-title">🔊 Audio Prompt Guidance</h3>
+            <p class="sidebar-caption" style="margin-bottom:8px;">Broadcast instructions to booth terminal:</p>
+            <div class="info-box" id="guidanceBox">
+                🎙️ <strong>Spanish Guidance:</strong><br>Describa detalladamente sus síntomas. ¿Dónde siente el dolor? ¿Hace cuánto empezó?
+            </div>
+            
+            <hr class="divider">
+            <h3 class="section-title">⚙️ System Settings</h3>
+            <label class="input-label" style="margin-top:0;">Secure API Gateway Key</label>
+            <input type="password" id="apiKeyInput" class="form-control" placeholder="Paste Gemini API Key here...">
+            <button id="saveApiKeyBtn" class="btn btn-secondary w-100" style="margin-top:10px;">💾 Save API Key</button>
+            <p id="apiKeyStatus" class="sidebar-caption" style="margin-top:8px;">No Gemini API key configured.</p>
+            <p class="sidebar-caption" style="margin-top:4px;">Enter your Gemini API key once and it will be stored locally in your browser for this app.</p>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h1>🚨 ER Command Center: Multi-Language AI Triage</h1>
+                <p>Translating native symptoms, extracting clinical entities, and ranking Emergency Severity Indices (ESI) in real-time.</p>
+            </header>
+            
+            <div class="tab-navigation">
+                <button id="tab-intake-terminal" class="tab-btn active" onclick="switchTab('intake-terminal')">📥 Patient Intake Terminal</button>
+                <button id="tab-telemetry-queue" class="tab-btn" onclick="switchTab('telemetry-queue')">🩺 Physician Telemetry Queue</button>
+                <button id="tab-patient-records" class="tab-btn" onclick="switchTab('patient-records')">📋 Patient Records & History</button>
+                <button id="tab-analytics-center" class="tab-btn" onclick="switchTab('analytics-center')">📈 Operational Performance Analytics</button>
+            </div>
+
+            <section id="intake-terminal" class="tab-panel active">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="card">
+                            <h3 class="card-title" style="margin-bottom:15px; font-weight:700;">📥 Patient Intake</h3>
+                            
+                            <div id="voicePanel" class="voice-alert">
+                                🌐 <strong>Voice recording ready.</strong> Speak clearly and watch the text appear below.
+                            </div>
+                            <button id="recordBtn" class="btn btn-secondary w-100" style="font-weight:700;">🔴 Start Recording</button>
+                            <div class="input-label" style="margin-bottom: 6px; color:#cbd5e1;">Live transcription (exact speech)</div>
+                            <div id="liveTranscript" class="display-box" style="margin-top:0; min-height:110px; background: rgba(255,255,255,0.08); color:#e2e8f0; white-space: pre-wrap;">
+                                <p style="color:#94a3b8; margin:0;">Live transcription will appear here while you speak.</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="input-label">Patient Name</label>
+                                <input type="text" id="patientName" class="form-control" placeholder="Enter patient name">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="input-label" id="symptomLabel">Filtered symptom list (editable)</label>
+                                <textarea id="symptomText" class="form-control" rows="4" placeholder="Filtered symptom list will appear here..."></textarea>
+                            </div>
+                            
+                            <button id="injectBtn" class="btn btn-secondary" style="background-color:rgba(255,255,255,0.02);">Use sample text</button>
+                            
+                            <div class="form-group">
+                                <label class="input-label">Vital Signs</label>
+                                <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-bottom:15px;">
+                                    <div>
+                                        <label class="input-label" style="margin-bottom:4px;">BP Systolic (mmHg):</label>
+                                        <input type="number" id="bpSystolic" class="form-control" placeholder="120" min="60" max="300">
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="margin-bottom:4px;">BP Diastolic (mmHg):</label>
+                                        <input type="number" id="bpDiastolic" class="form-control" placeholder="80" min="30" max="150">
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="margin-bottom:4px;">Heart Rate (bpm):</label>
+                                        <input type="number" id="heartRate" class="form-control" placeholder="72" min="30" max="200">
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="margin-bottom:4px;">Temperature (°F):</label>
+                                        <input type="number" id="temperature" class="form-control" placeholder="98.6" min="85" max="110" step="0.1">
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="margin-bottom:4px;">O₂ Saturation (%):</label>
+                                        <input type="number" id="o2Saturation" class="form-control" placeholder="98" min="50" max="100">
+                                    </div>
+                                    <div>
+                                        <label class="input-label" style="margin-bottom:4px;">Respiratory Rate (breaths/min):</label>
+                                        <input type="number" id="respiratoryRate" class="form-control" placeholder="18" min="5" max="60">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="input-label">Medical History</label>
+                                <textarea id="medicalHistory" class="form-control" rows="3" placeholder="Allergies, conditions, medications..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="input-label">Notes</label>
+                                <textarea id="clinicalNotes" class="form-control" rows="2" placeholder="Additional observations..."></textarea>
+                            </div>
+                            
+                            <button type="button" id="processBtn" class="btn btn-primary w-100" style="margin-top:10px;">Submit Triage</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-6">
+                        <div class="card">
+                            <h3 class="card-title" style="margin-bottom:15px; font-weight:700;">🧬 Triage Result</h3>
+                            <div id="processingSpinner" class="spinner hidden">
+                                <div style="border:3px solid transparent; border-top-color:#3b82f6; width:32px; height:32px; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+                                <span style="letter-spacing: 0.5px;">Processing transcription and triage...</span>
+                            </div>
+                            <div id="triageResultViewport">
+                                <p class="muted-text">Triage results will appear here after submission.</p>
+                            </div>
+                            <div class="form-group" style="margin-top:12px;">
+                                <label class="input-label">Clarify the differential</label>
+                                <textarea id="triageClarificationInput" class="form-control" rows="2" placeholder="Type new clinician clarification and press Enter to rerun triage..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="telemetry-queue" class="tab-panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <div>
+                        <h3 class="card-title">🩺 Live Triage Queue</h3>
+                        <p style="color:var(--text-muted); font-size:0.9rem;">See current patients and filter by priority, language, or name.</p>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
+                    <input type="text" id="searchPatient" class="form-control" placeholder="Find patient name or ID..." style="margin-bottom:0;">
+                    <select id="filterESI" class="form-control" style="margin-bottom:0;">
+                        <option value="">All Priority Levels</option>
+                        <option value="ESI-1">ESI-1 (Critical)</option>
+                        <option value="ESI-2">ESI-2 (Emergent)</option>
+                        <option value="ESI-3">ESI-3 (Urgent)</option>
+                        <option value="ESI-4">ESI-4 (Less Urgent)</option>
+                        <option value="ESI-5">ESI-5 (Non-Urgent)</option>
+                    </select>
+                    <select id="filterLanguage" class="form-control" style="margin-bottom:0;">
+                        <option value="">All Languages</option>
+                        <option value="English">English</option>
+                        <option value="Spanish">Spanish</option>
+                        <option value="Mandarin">Mandarin</option>
+                        <option value="Arabic">Arabic</option>
+                        <option value="Vietnamese">Vietnamese</option>
+                        <option value="Hindi">Hindi</option>
+                        <option value="French">French</option>
+                        <option value="Portuguese">Portuguese</option>
+                        <option value="Japanese">Japanese</option>
+                        <option value="Korean">Korean</option>
+                        <option value="Russian">Russian</option>
+                        <option value="Tagalog">Tagalog</option>
+                        <option value="German">German</option>
+                    </select>
+                    <button id="exportBtn" class="btn btn-secondary" style="margin-bottom:0; background-color:rgba(16, 185, 129, 0.2); color:#a7f3d0;">Download CSV</button>
+                </div>
+
+                <div id="liveQueueContainer"></div>
+            </section>
+
+            <section id="patient-records" class="tab-panel">
+                <h3 class="card-title" style="margin-bottom:20px;">📋 Patient History</h3>
+                <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px; margin-bottom:20px;">
+                    <input type="text" id="lookupPatientId" class="form-control" placeholder="Find patient by name or ID..." style="margin-bottom:0;">
+                    <input type="date" id="lookupDateRange" class="form-control" style="margin-bottom:0;">
+                    <button id="lookupBtn" class="btn btn-primary" style="margin-bottom:0;">Find Records</button>
+                </div>
+                <div id="patientHistoryContainer" class="card">
+                    <p class="muted-text">Enter patient ID or name to retrieve historical medical records and previous triage assessments.</p>
+                </div>
+            </section>
+
+            <section id="analytics-center" class="tab-panel">
+                <h3 class="card-title" style="margin-bottom:20px;">📈 Live Command Center Statistics</h3>
+                <div class="row">
+                    <div class="col-4"><div class="card metric-card"><h5>Current Queue Size</h5><h2 id="queueSizeMetric">0</h2><p class="text-blue">Active patients in system</p></div></div>
+                    <div class="col-4"><div class="card metric-card"><h5>Avg Triage Time</h5><h2 id="avgTriageTime">2.3 min</h2><p class="text-green">↓ 15% faster than baseline</p></div></div>
+                    <div class="col-4"><div class="card metric-card"><h5>ESI-1/2 Count</h5><h2 id="criticalCount">3</h2><p class="text-green">High-priority patients</p></div></div>
+                </div>
+                <div class="row">
+                    <div class="col-4"><div class="card metric-card"><h5>Avg Translation Latency</h5><h2>420 ms</h2><p class="text-green">↓ 42ms deviation limit</p></div></div>
+                    <div class="col-4"><div class="card metric-card"><h5>Diagnostic Accuracy</h5><h2>98.7%</h2><p class="text-green">↑ AI classification confidence</p></div></div>
+                    <div class="col-4"><div class="card metric-card"><h5>Active Facility Capacity</h5><h2>72%</h2><p class="text-blue">Operational headroom available</p></div></div>
+                </div>
+                <div class="row" style="margin-top:10px;">
+                    <div class="col-6"><div class="card"><h4>🌐 Intake Language Demographics</h4><canvas id="langChart"></canvas></div></div>
+                    <div class="col-6"><div class="card"><h4>📊 ESI Severity Distribution</h4><canvas id="esiChart"></canvas></div></div>
+                </div>
+                <div class="row" style="margin-top:10px;">
+                    <div class="col-6"><div class="card"><h4>⏰ Triage Volume by Hour</h4><canvas id="volumeChart"></canvas></div></div>
+                    <div class="col-6"><div class="card"><h4>🏥 Average Vitals Overview</h4><canvas id="vitalsChart"></canvas></div></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const LANG_PRESETS = {
+            English: { text: "Please describe your symptoms clearly. Where do you feel pain? When did it start?", placeholder: "Pain 8/10, Duration 2 hours, Fever", sample: "I have a sharp pain in my lower right abdomen since this morning. I feel nauseous and I have a high temperature." },
+            Spanish: { text: "Describa detalladamente sus síntomas. ¿Dónde siente el dolor? ¿Hace cuánto empezó?", placeholder: "Pain: 8/10, Duration: 2 hours, Diabetic", sample: "Tengo un dolor agudo y terrible en la parte inferior derecha del abdomen desde esta mañana. Siento náuseas y tengo fiebre alta." },
+            Mandarin: { text: "請詳細描述您的症狀。您哪裡感到疼痛？症狀是從什麼時候開始的？", placeholder: "疼痛: 5/10, 持續時間: 3天", sample: "從今天早上開始，我的右下腹部感到劇烈且可怕的疼痛。我感到噁心，而且發高燒。" },
+            Arabic: { text: "يرجى وصف الأعراض بالتفصيل. أين تشعر بالألم؟ متى بدأ؟", placeholder: "درجة الحرارة: 39, المدة: يومين", sample: "أعاني من ألم حاد وفظيع في الجزء السفلي الأيمن من البطن منذ صباح اليوم. أشعر بالغثيان ولدي حمى شديدة." },
+            Vietnamese: { text: "Vui lòng mô tả chi tiết các triệu chứng của bạn. Bạn cảm thấy đau ở đâu? Bắt đầu từ khi nào?", placeholder: "Đau: 6/10, Thời gian: 1 ngày", sample: "Tôi bị đau nhói dữ dội ở vùng bụng dưới bên phải từ sáng nay. Tôi cảm thấy buồn nôn và bị sốt cao." },
+            Hindi: { text: "कृपया अपने लक्षणों का विस्तार से वर्णन करें। आपको दर्द कहाँ महसूस हो रहा है? यह कब शुरू हुआ?", placeholder: "दर्द: 7/10, अवधि: 4 घंटे", sample: "मुझे आज सुबह से पेट के निचले दाहिने हिस्से में तेज और असहनीय दर्द हो रहा है। मुझे उल्टी आ रही है और तेज बुखार है।" },
+            French: { text: "Veuillez décrire vos symptômes en détail. Où avez-vous mal ? Depuis quand ?", placeholder: "Douleur : 7/10, Durée : 2 heures", sample: "J'ai une douleur aiguë dans le bas-ventre depuis ce matin, avec des nausées et de la fièvre." },
+            Portuguese: { text: "Por favor descreva seus sintomas em detalhes. Onde dói? Há quanto tempo?", placeholder: "Dor: 6/10, Duração: 3 horas", sample: "Sinto uma dor forte no lado direito do abdômen desde cedo, estou enjoado e com febre." },
+            Japanese: { text: "症状を詳しく説明してください。どこが痛いですか？いつ始まりましたか？", placeholder: "痛み: 8/10, 継続時間: 2時間", sample: "今朝から右下腹部に鋭い痛みがあり、吐き気と高熱があります。" },
+            Korean: { text: "증상을 자세히 설명해 주세요. 어디가 아프세요? 언제부터였나요?", placeholder: "통증: 7/10, 기간: 3시간", sample: "오늘 아침부터 오른쪽 아랫배가 심하게 아프고 메스꺼움과 열이 납니다." },
+            Russian: { text: "Пожалуйста, подробно опишите свои симптомы. Где болит? Когда началось?", placeholder: "Боль: 7/10, Длительность: 2 часа", sample: "С утра у меня сильная боль в правой нижней части живота, тошнота и высокая температура." },
+            Tagalog: { text: "Pakilalarawan nang detalyado ang iyong mga sintomas. Saan ka sakit? Kailan nagsimula?", placeholder: "Sakit: 6/10, Tagal: 2 oras", sample: "Masakit ang kanang ibabang tiyan ko simula kaninang umaga, nasusuka ako at may lagnat." },
+            German: { text: "Bitte beschreiben Sie Ihre Symptome genau. Wo tut es weh? Seit wann?", placeholder: "Schmerz: 8/10, Dauer: 3 Stunden", sample: "Ich habe seit heute Morgen starke Schmerzen im rechten Unterbauch, Übelkeit und Fieber." }
+        };
+
+        let triageQueue = [];
+        let analyticsChartsInitialized = false;
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let speechRecognition;
+        let recognitionSupported = false;
+        let allPatientHistory = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            configureLanguageContext();
+            loadStoredApiKey();
+            loadLiveQueue();
+
+            document.getElementById("languageSelector").addEventListener("change", configureLanguageContext);
+            document.getElementById("injectBtn").addEventListener("click", injectLanguageMockData);
+            document.getElementById("processBtn").addEventListener("click", executeTriagePipeline);
+            document.getElementById("triageClarificationInput").addEventListener("keydown", handleClarificationKeydown);
+            document.getElementById("recordBtn").addEventListener("click", toggleRecording);
+            document.getElementById("apiKeyInput").addEventListener("input", updateApiKeyStatus);
+            document.getElementById("apiKeyInput").addEventListener("blur", saveApiKey);
+            document.getElementById("apiKeyInput").addEventListener("keydown", handleApiKeyEnter);
+            document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
+            
+            recognitionSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+            if (!recognitionSupported) {
+                document.getElementById("voicePanel").innerHTML = "🌐 Voice recording ready. Live speech preview not supported in this browser.";
+            }
+
+            // New event listeners
+            document.getElementById("searchPatient").addEventListener("input", filterQueue);
+            document.getElementById("filterESI").addEventListener("change", filterQueue);
+            document.getElementById("filterLanguage").addEventListener("change", filterQueue);
+            document.getElementById("exportBtn").addEventListener("click", exportQueueToCSV);
+            document.getElementById("lookupBtn").addEventListener("click", lookupPatientHistory);
+        });
+
+        function saveApiKey() {
+            const apiKeyValue = document.getElementById("apiKeyInput").value.trim();
+            if (!apiKeyValue) {
+                alert("Please paste a valid Gemini API key before saving.");
+                return;
+            }
+            localStorage.setItem("gemini_api_key", apiKeyValue);
+            updateApiKeyStatus();
+            alert("Gemini API key saved locally. You can now record voice.");
+        }
+
+        function loadStoredApiKey() {
+            const storedKey = localStorage.getItem("gemini_api_key");
+            if (storedKey) {
+                document.getElementById("apiKeyInput").value = storedKey;
+            }
+            updateApiKeyStatus();
+        }
+
+        function updateApiKeyStatus() {
+            const storedKey = localStorage.getItem("gemini_api_key");
+            const apiKeyField = document.getElementById("apiKeyInput").value.trim();
+            const status = document.getElementById("apiKeyStatus");
+            if (apiKeyField || storedKey) {
+                status.textContent = "Gemini API key configured and ready.";
+                status.style.color = "#34d399";
+            } else {
+                status.textContent = "No Gemini API key configured.";
+                status.style.color = "#94a3b8";
+            }
+        }
+
+        function handleApiKeyEnter(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                saveApiKey();
+                document.getElementById("apiKeyInput").blur();
+            }
+        }
+
+        const apiBase = 'http://127.0.0.1:5000';
+
+        async function loadLiveQueue() {
+            try {
+                const response = await fetch(`${apiBase}/api/queue`);
+                if (response.ok) {
+                    triageQueue = await response.json();
+                    allPatientHistory = [...triageQueue];
+                    updatePhysicianTelemetryView();
+                    updateAnalyticsMetrics();
+                }
+            } catch (err) {
+                console.error("Failed to connect to triage tracking API.", err);
+            }
+        }
+
+        function filterQueue() {
+            const searchTerm = document.getElementById("searchPatient").value.toLowerCase();
+            const esiFilter = document.getElementById("filterESI").value;
+            const langFilter = document.getElementById("filterLanguage").value;
+
+            const filtered = triageQueue.filter(patient => {
+                const matchesSearch = patient.name.toLowerCase().includes(searchTerm) || patient.id.toLowerCase().includes(searchTerm);
+                const matchesESI = !esiFilter || patient.urgency_flag === esiFilter;
+                const matchesLang = !langFilter || patient.language === langFilter;
+                return matchesSearch && matchesESI && matchesLang;
+            });
+
+            renderQueueWithPatients(filtered);
+        }
+
+        function exportQueueToCSV() {
+            const headers = ["Patient ID", "Name", "Language", "ESI Level", "Symptoms", "Translated Symptoms", "Anatomy", "Vitals", "Medical History", "Timestamp"];
+            const rows = triageQueue.map(p => [
+                p.id,
+                p.name,
+                p.language,
+                p.esi_label,
+                p.raw_symptoms.replace(/"/g, '""'),
+                p.translated_symptoms.replace(/"/g, '""'),
+                Array.isArray(p.anatomy) ? p.anatomy.join("; ") : p.anatomy,
+                Array.isArray(p.vitals) ? p.vitals.join("; ") : p.vitals,
+                p.medical_history ? p.medical_history.replace(/"/g, '""') : "",
+                p.timestamp
+            ]);
+
+            let csv = headers.map(h => `"${h}"`).join(",") + "\n";
+            csv += rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `triage_queue_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        async function lookupPatientHistory() {
+            const lookupId = document.getElementById("lookupPatientId").value.toLowerCase();
+            const lookupDate = document.getElementById("lookupDateRange").value;
+
+            const results = allPatientHistory.filter(p => {
+                const matchesId = p.id.toLowerCase().includes(lookupId) || p.name.toLowerCase().includes(lookupId);
+                return matchesId;
+            });
+
+            const container = document.getElementById("patientHistoryContainer");
+            if (results.length === 0) {
+                container.innerHTML = `<p class="muted-text">No patient records found.</p>`;
+                return;
+            }
+
+            container.innerHTML = results.map(p => {
+                const esiClass = p.urgency_flag.toLowerCase().replace(" ", "");
+                const anatBadges = (Array.isArray(p.anatomy) ? p.anatomy : []).map(a => `<span class="anatomy-badge">${a}</span>`).join('');
+                const vitalBadges = (Array.isArray(p.vitals) ? p.vitals : []).map(v => `<span class="vital-badge">${v}</span>`).join('');
+
+                return `
+                    <div class="card" style="margin-bottom:15px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h4>👤 ${p.name} - ID: ${p.id}</h4>
+                            <span style="color:var(--text-muted); font-size:0.85rem;">${p.timestamp}</span>
+                        </div>
+                        <div class="${esiClass}" style="margin-bottom:10px; padding:10px;"><strong>${p.esi_label}</strong></div>
+                        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:8px;"><strong>Language:</strong> ${p.language}</p>
+                        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:8px;"><strong>Symptoms:</strong> ${p.raw_symptoms}</p>
+                        <p style="color:#a7f3d0; font-size:0.9rem; margin-bottom:8px;"><strong>Clinical Note:</strong> ${p.clinical_rationale}</p>
+                        ${p.medical_history ? `<p style="color:var(--text-muted); font-size:0.9rem;"><strong>Medical History:</strong> ${p.medical_history}</p>` : ''}
+                        <div style="margin-top:10px;">${anatBadges} ${vitalBadges}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderQueueWithPatients(patients) {
+            const queueContainer = document.getElementById("liveQueueContainer");
+            if (patients.length === 0) {
+                queueContainer.innerHTML = `<div class="card"><p class="text-green" style="text-align:center; padding:30px; font-weight:600;">All active triage vectors clear. No matching patients found.</p></div>`;
+                return;
+            }
+
+            queueContainer.innerHTML = patients.map(patient => {
+                let anatomyBadges = (Array.isArray(patient.anatomy) ? patient.anatomy : [])
+                    .map(a => `<span class="anatomy-badge">${a}</span>`).join('');
+                let vitalBadges = (Array.isArray(patient.vitals) ? patient.vitals : [])
+                    .map(v => `<span class="vital-badge">${v}</span>`).join('');
+                const esiClass = patient.urgency_flag.toLowerCase().replace(" ", "");
+
+                return `
+                    <div class="card" style="margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px; gap:10px;">
+                            <div>
+                                <h4 style="color:#ffffff; font-size:1.15rem;">👤 Patient: ${patient.name} (${patient.language}) — ID: ${patient.id}</h4>
+                                <span style="color:var(--text-muted); font-size:0.8rem;">Intake: ${patient.timestamp}</span>
+                            </div>
+                            <button class="btn btn-primary" onclick="removeDispatchedPatient('${patient.id}')" style="padding:8px 16px; font-size:0.85rem; margin:0;">✓ Admit Patient</button>
+                        </div>
+                        <div class="${esiClass}" style="margin-bottom:15px;">
+                            <strong>Priority Track Status: ${patient.esi_label}</strong>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <span class="input-label">🗣️ Native Telemetry Stream Input:</span>
+                                <div class="display-box" style="margin-top:5px; font-size:0.9rem;">"${patient.raw_symptoms}"</div>
+                            </div>
+                            <div class="col-6">
+                                <span class="input-label">🇬🇧 English Clinical Reference Formulation:</span>
+                                <div class="display-box" style="margin-top:5px; font-size:0.9rem; border-color:var(--blue-accent);">"${patient.translated_symptoms}"</div>
+                            </div>
+                        </div>
+                        <details style="margin-top:5px;">
+                            <summary>View Neural Rationale & Semantic Entity Maps</summary>
+                            <div style="padding-top:12px;">
+                                <p style="font-size:0.9rem; color:#cbd5e1; margin-bottom:12px; line-height:1.5;"><strong>Priority Score Logic Verification:</strong> <em>${patient.clinical_rationale || patient.rationale}</em></p>
+                                ${patient.medical_history ? `<p style="font-size:0.9rem; color:#cbd5e1; margin-bottom:12px;"><strong>Medical History:</strong> ${patient.medical_history}</p>` : ''}
+                                <span class="input-label" style="font-size:0.75rem;">Parsed Anatomical Elements:</span>
+                                <div style="margin-bottom:10px;">${anatomyBadges || 'None'}</div>
+                                <span class="input-label" style="font-size:0.75rem;">Mapped Health Metrics:</span>
+                                <div>${vitalBadges || 'None'}</div>
+                            </div>
+                        </details>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateAnalyticsMetrics() {
+            const criticalCount = triageQueue.filter(p => p.urgency_flag === "ESI-1" || p.urgency_flag === "ESI-2").length;
+            document.getElementById("queueSizeMetric").textContent = triageQueue.length;
+            document.getElementById("criticalCount").textContent = criticalCount;
+        }
+
+        function languageToLocale(language) {
+            return {
+                English: 'en-US',
+                Spanish: 'es-ES',
+                Mandarin: 'zh-CN',
+                Arabic: 'ar-SA',
+                Vietnamese: 'vi-VN',
+                Hindi: 'hi-IN',
+                French: 'fr-FR',
+                Portuguese: 'pt-BR',
+                Japanese: 'ja-JP',
+                Korean: 'ko-KR',
+                Russian: 'ru-RU',
+                Tagalog: 'fil-PH',
+                German: 'de-DE'
+            }[language] || 'en-US';
+        }
+
+        async function toggleRecording() {
+            const recordBtn = document.getElementById("recordBtn");
+            const currentLang = document.getElementById("languageSelector").value;
+            const liveTranscriptEl = document.getElementById("liveTranscript");
+            let finalTranscript = "";
+            let liveWords = "";
+
+            if (!isRecording) {
+                audioChunks = [];
+                liveTranscriptEl.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                        <div style="border:3px solid transparent; border-top-color:#3b82f6; width:24px; height:24px; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+                        <span style="font-weight:600; color:#3b82f6; letter-spacing:0.5px;">Transcribing ${currentLang}...</span>
+                    </div>
+                    <div id="liveWordsDisplay" style="color:#e2e8f0; white-space:pre-wrap; min-height:40px; padding-top:8px; border-top:1px solid rgba(59, 130, 246, 0.2);">
+                        <p style="color:#94a3b8; margin:0;">Listening for words...</p>
+                    </div>
+                `;
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                        ? 'audio/webm;codecs=opus'
+                        : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/wav');
+                    mediaRecorder = new MediaRecorder(stream, { mimeType });
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        recordBtn.innerText = "⏳ Processing speech waveforms...";
+                        recordBtn.disabled = true;
+
+                        const blobType = mediaRecorder && mediaRecorder.mimeType ? mediaRecorder.mimeType : 'audio/webm';
+                        const audioBlob = new Blob(audioChunks, { type: blobType });
+                        await sendAudioToBackend(audioBlob, currentLang, finalTranscript);
+
+                        recordBtn.innerText = "🔴 Start Recording";
+                        recordBtn.disabled = false;
+                        recordBtn.style.background = "";
+                        if (speechRecognition) {
+                            speechRecognition.stop();
+                        }
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordBtn.innerText = "⏹️ Stop recording";
+                    recordBtn.style.background = "linear-gradient(135deg, #dc2626, #991b1b)";
+
+                    if (recognitionSupported) {
+                        const RecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+                        speechRecognition = new RecognitionClass();
+                        speechRecognition.interimResults = true;
+                        speechRecognition.continuous = true;
+                        speechRecognition.lang = languageToLocale(currentLang);
+
+                        speechRecognition.onresult = (event) => {
+                            let interimTranscript = "";
+                            for (let i = event.resultIndex; i < event.results.length; i++) {
+                                const transcript = event.results[i][0].transcript;
+                                if (event.results[i].isFinal) {
+                                    finalTranscript += transcript + " ";
+                                } else {
+                                    interimTranscript += transcript;
+                                }
+                            }
+                            liveWords = finalTranscript + interimTranscript;
+                            const liveWordsDisplay = document.getElementById("liveWordsDisplay");
+                            if (liveWordsDisplay) {
+                                liveWordsDisplay.textContent = liveWords.trim() || "Listening for words...";
+                            }
+                            document.getElementById("symptomText").value = formatSymptomBullets(liveWords);
+                        };
+
+                        speechRecognition.onerror = (event) => {
+                            console.warn("Speech recognition error:", event.error);
+                            const liveWordsDisplay = document.getElementById("liveWordsDisplay");
+                            if (liveWordsDisplay) {
+                                liveWordsDisplay.textContent = "Live speech preview unavailable. Recording audio instead.";
+                            }
+                        };
+
+                        speechRecognition.onend = () => {
+                            if (isRecording) {
+                                speechRecognition.start();
+                            }
+                        };
+
+                        speechRecognition.start();
+                    } else {
+                        const liveWordsDisplay = document.getElementById("liveWordsDisplay");
+                        if (liveWordsDisplay) {
+                            liveWordsDisplay.innerHTML = "Live speech preview not supported by your browser. Recording audio and transcribing on stop.";
+                        }
+                    }
+                } catch (err) {
+                    alert("Microphone access denied or unsupported: " + err.message);
+                    liveTranscriptEl.innerHTML = `<p style="color:#f87171; margin:0;">Microphone access issue. Check browser permissions.</p>`;
+                    isRecording = false;
+                    recordBtn.innerText = "🔴 Start Recording";
+                    recordBtn.style.background = "";
+                }
+            } else {
+                isRecording = false;
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+                if (speechRecognition) {
+                    speechRecognition.stop();
+                }
+                recordBtn.innerText = "🔴 Start Recording";
+                recordBtn.style.background = "";
+            }
+        }
+
+        function formatSymptomBullets(rawText) {
+            const text = (rawText || "").trim();
+            if (!text) return "";
+            if (/^\s*•/.test(text)) {
+                return text.replace(/^\s*•/gm, '• ').trim();
+            }
+
+            const symptomKeywords = /\b(pain|dizziness|dizzy|nausea|nauseous|vomit|vomiting|fever|cough|headache|ache|hurt|burn|swelling|rash|bleeding|bleed|shortness of breath|breath|pressure|tightness|numb|tingle|tingling|weakness|diarrhea|diarrhoea|stomach|abdomen|chest|back|neck|ear|eye|throat|cough|sneeze|vomit|diarrhea|dizzy|nausea|pain|ache|hurt|burn)\b/i;
+            const nonSymptomNoise = /\b(hello|hi|hey|greetings|thanks|thank you|please|okay|ok|yeah|yep|nope|I love dogs|I love|I like|I love|I really|very much|just|also|so|and then)\b/i;
+
+            const phrases = text
+                .replace(/\r\n|\n|\r/g, ' ')
+                .replace(/^(hello|hi|hey|good morning|good afternoon|good evening)[,\s]*/i, '')
+                .split(/\band\b|,|\.|\?|!|;/i)
+                .map(segment => segment.trim())
+                .filter(Boolean)
+                .map(segment => {
+                    let item = segment.replace(/^i(?:'m| am)\s+/i, '');
+                    item = item.replace(/^my\s+/i, '');
+                    item = item.replace(/^i\s+feel\s+/i, '');
+                    item = item.replace(/^i\s+have\s+/i, '');
+                    item = item.replace(/^it\s+feels\s+/i, '');
+                    item = item.replace(/\bhurts?\b/i, 'pain');
+                    item = item.replace(/\bfeeling\s+/i, '');
+                    item = item.replace(/\bdizzy\b/i, 'dizziness');
+                    item = item.replace(/\bnauseous\b/i, 'nausea');
+                    item = item.replace(/\bnauseated\b/i, 'nausea');
+                    item = item.replace(/\bshortness of breath\b/i, 'shortness of breath');
+                    item = item.replace(/\bshort of breath\b/i, 'shortness of breath');
+                    item = item.replace(/\bstomach hurts\b/i, 'stomach pain');
+                    item = item.replace(/\bstomach discomfort\b/i, 'stomach discomfort');
+                    item = item.replace(/\bheartburn\b/i, 'heartburn');
+                    item = item.replace(/\bchest pain\b/i, 'chest pain');
+                    item = item.replace(/\bheadache\b/i, 'headache');
+                    item = item.replace(/\bback pain\b/i, 'back pain');
+                    item = item.replace(/\bheadache\b/i, 'headache');
+                    item = item.replace(/\b(pleased|happy|love|like|enjoy)\b/i, '');
+                    item = item.replace(/\bdogs?\b/i, '');
+                    item = item.replace(/\s+/g, ' ').trim();
+                    return item;
+                })
+                .filter(item => item.length > 0)
+                .filter(item => symptomKeywords.test(item))
+                .map(item => item.replace(nonSymptomNoise, '').trim())
+                .filter(item => item.length > 0);
+
+            if (phrases.length === 0) {
+                return "";
+            }
+            return phrases.map(item => `• ${item}`).join('\n');
+        }
+
+        async function sendAudioToBackend(audioBlob, language, liveTranscript = "") {
+            const apiKey = document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "";
+            const formData = new FormData();
+            formData.append("audio_data", audioBlob, "recording.webm");
+            formData.append("mime_type", audioBlob.type);
+            formData.append("language", language);
+            formData.append("api_key", apiKey);
+
+            if (!apiKey) {
+                alert("Please enter your Gemini API key in the left sidebar before recording.");
+                return;
+            }
+
+            try {
+                const apiBase = 'http://127.0.0.1:5000';
+
+                const response = await fetch(`${apiBase}/api/voice-intake`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("Voice intake returned non-OK status", response.status, response.statusText, errorText);
+                    alert(`Transcription Failed: ${response.status} ${response.statusText}`);
+                    return;
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    const transcript = result.transcription || liveTranscript;
+                    if (transcript) {
+                        const formatted = formatSymptomBullets(transcript);
+                        document.getElementById("symptomText").value = formatted;
+                        document.getElementById("liveTranscript").textContent = transcript;
+                    }
+                } else {
+                    alert("Transcription Failed: " + result.error);
+                }
+            } catch (error) {
+                console.error("Transmission error:", error);
+                alert("Could not connect to backend audio transcription pipeline. Check that the page was opened from http://127.0.0.1:5000 and the Flask server is running.");
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.remove("active"));
+            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+            
+            document.getElementById(tabId).classList.add("active");
+            document.getElementById(`tab-${tabId}`).classList.add("active");
+            
+            if (tabId === 'analytics-center' && !analyticsChartsInitialized) {
+                renderOperationalCharts();
+            }
+        }
+
+        function configureLanguageContext() {
+            const selectedLanguage = document.getElementById("languageSelector").value;
+            const context = LANG_PRESETS[selectedLanguage];
+            document.getElementById("guidanceBox").innerHTML = `🎙️ <strong>${selectedLanguage} Guidance:</strong><br>${context.text}`;
+            document.getElementById("symptomLabel").innerText = `Enter symptoms in ${selectedLanguage}:`;
+            document.getElementById("symptomText").value = "";
+        }
+
+        function injectLanguageMockData() {
+            const selectedLanguage = document.getElementById("languageSelector").value;
+            document.getElementById("symptomText").value = LANG_PRESETS[selectedLanguage].sample;
+        }
+
+        function getCurrentTriageFormData() {
+            const rawText = document.getElementById("symptomText").value;
+            const currentLang = document.getElementById("languageSelector").value;
+            const patientName = document.getElementById("patientName").value;
+            const apiKey = document.getElementById("apiKeyInput").value.trim() || localStorage.getItem("gemini_api_key") || "";
+            const vitals = {
+                bp: `${document.getElementById("bpSystolic").value}/${document.getElementById("bpDiastolic").value}`,
+                hr: document.getElementById("heartRate").value,
+                temp: document.getElementById("temperature").value,
+                o2: document.getElementById("o2Saturation").value,
+                rr: document.getElementById("respiratoryRate").value
+            };
+            const medicalHistory = document.getElementById("medicalHistory").value;
+            const clinicalNotes = document.getElementById("clinicalNotes").value;
+            const clarification = document.getElementById("triageClarificationInput").value.trim();
+
+            return { rawText, currentLang, patientName, apiKey, vitals, medicalHistory, clinicalNotes, clarification };
+        }
+
+        async function executeTriagePipeline() {
+            const { rawText, currentLang, patientName, apiKey, vitals, medicalHistory, clinicalNotes, clarification } = getCurrentTriageFormData();
+
+            if (!rawText) {
+                alert("Provide structural system input parameters before starting translation parsing sequences.");
+                return;
+            }
+
+            document.getElementById("processingSpinner").classList.remove("hidden");
+            document.getElementById("triageResultViewport").innerHTML = "";
+
+            if (!apiKey) {
+                document.getElementById("triageResultViewport").innerHTML = `<p class="muted-text">Please enter or save your Gemini API key before submitting triage.</p>`;
+                document.getElementById("processingSpinner").classList.add("hidden");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiBase}/api/triage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symptoms: rawText,
+                        language: currentLang,
+                        name: patientName,
+                        vitals: vitals,
+                        medical_history: medicalHistory,
+                        clinical_notes: clinicalNotes,
+                        clarification: clarification,
+                        api_key: apiKey
+                    })
+                });
+
+                const result = await response.json().catch(() => ({ success: false, error: 'Invalid response from server.' }));
+
+                if (!response.ok || !result.success) {
+                    const errorMessage = result.error || `Server returned status ${response.status}`;
+                    document.getElementById("triageResultViewport").innerHTML = `<p class="muted-text">Triage failed: ${errorMessage}</p>`;
+                    console.error("Triage pipeline error", errorMessage, result);
+                } else {
+                    renderSingleOutputPanel(result.patient);
+                    await loadLiveQueue();
+                }
+            } catch (err) {
+                console.error("Pipeline failure connection error", err);
+                const errorMessage = err?.message || "Check your network, backend server, or Gemini API key.";
+                document.getElementById("triageResultViewport").innerHTML = `<p class="muted-text">Unable to submit triage. ${errorMessage}</p>`;
+            } finally {
+                document.getElementById("processingSpinner").classList.add("hidden");
+            }
+        }
+
+        function handleClarificationKeydown(event) {
+            if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey) {
+                event.preventDefault();
+                executeTriagePipeline();
+            }
+        }
+
+        function renderSingleOutputPanel(pt) {
+            const viewport = document.getElementById("triageResultViewport");
+            const esiClass = pt.urgency_flag.toLowerCase().replace(" ", "");
+            
+            let anatomyBadges = (Array.isArray(pt.anatomy) ? pt.anatomy : [])
+                .map(a => `<span class="anatomy-badge">${a}</span>`).join('');
+            let vitalBadges = (Array.isArray(pt.vitals) ? pt.vitals : [])
+                .map(v => `<span class="vital-badge">${v}</span>`).join('');
+            let differentialBadges = (Array.isArray(pt.differentials) ? pt.differentials : [])
+                .map(d => `<li>${d}</li>`).join('');
+            let bodySystemBadges = (Array.isArray(pt.body_systems) ? pt.body_systems : [])
+                .map(s => `<span class="anatomy-badge">${s}</span>`).join('');
+            let followUpQuestions = (Array.isArray(pt.follow_up_questions) ? pt.follow_up_questions : [])
+                .map(q => `<li>${q}</li>`).join('');
+            let questionButtons = (Array.isArray(pt.follow_up_questions) ? pt.follow_up_questions : [])
+                .map(q => `<button class="btn btn-secondary" type="button" onclick="fillClarification('${q.replace(/'/g, "\\'")}')" style="margin:4px 6px 4px 0; padding:6px 10px; font-size:0.8rem;">${q}</button>`)
+                .join('');
+
+            viewport.innerHTML = `
+                <div class="${esiClass}">
+                    <h4 style="margin:0;">🚨 ESI Priority Classification: ${pt.esi_label}</h4>
+                </div>
+                <div style="font-size:0.8rem; margin: 10px 0; color: var(--text-muted)">ID: ${pt.id} | Tracked Language: ${pt.language}</div>
+                <p class="input-label" style="margin-top:10px;">📝 Raw Sourced Input Statement:</p>
+                <div class="display-box">${pt.raw_symptoms}</div>
+                <p class="input-label">🇬🇧 Grounded Translation Engine Output:</p>
+                <div class="display-box" style="border-color:rgba(16, 185, 129, 0.4);">${pt.translated_symptoms}</div>
+                <p class="input-label">🩺 Isolated Anatomical Boundaries:</p>
+                <div style="margin-bottom:12px;">${anatomyBadges || 'None identified'}</div>
+                <p class="input-label">📊 Tracked Vitals & Durations Matrix:</p>
+                <div>${vitalBadges || 'None identified'}</div>
+                <p class="input-label" style="margin-top:12px;">🧠 Possible Conditions:</p>
+                <ul style="margin:0 0 8px 18px; color: #e2e8f0;">${differentialBadges || '<li>None listed</li>'}</ul>
+                <p class="input-label">🫁 Body Systems Affected:</p>
+                <div style="margin-bottom:12px;">${bodySystemBadges || 'None identified'}</div>
+                <p class="input-label">❓ Follow-up Questions:</p>
+                <div style="margin:0 0 8px 0;">${questionButtons || '<div class="muted-text">None listed</div>'}</div>
+                <ul style="margin:0 0 8px 18px; color: #e2e8f0;">${followUpQuestions || '<li>None listed</li>'}</ul>
+                <p class="input-label">📝 Clarification Summary:</p>
+                <div class="display-box" style="border-color:rgba(59, 130, 246, 0.35);">${pt.clarification_summary || 'Additional clarification may still be needed.'}</div>
+                <p class="input-label">🧾 Clinical Rationale:</p>
+                <div class="display-box" style="border-color:rgba(245, 158, 11, 0.35);">${pt.clinical_rationale || 'No rationale provided.'}</div>
+            `;
+        }
+
+        function fillClarification(text) {
+            const input = document.getElementById('triageClarificationInput');
+            input.value = text;
+            input.focus();
+        }
+
+        function updatePhysicianTelemetryView() {
+            renderQueueWithPatients(triageQueue);
+        }
+
+        async function removeDispatchedPatient(patientId) {
+            try {
+                const response = await fetch(`${apiBase}/api/admit/${patientId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    await loadLiveQueue();
+                }
+            } catch (err) {
+                console.error("Could not complete dispatch delete sequence", err);
+            }
+        }
+
+        function renderOperationalCharts() {
+            analyticsChartsInitialized = true;
+            Chart.defaults.color = '#8892b0';
+            Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+
+            new Chart(document.getElementById('langChart'), {
+                type: 'bar',
+                data: {
+                    labels: ["Spanish", "Mandarin", "Arabic", "Vietnamese", "Hindi"],
+                    datasets: [{
+                        label: 'Intake Frequency',
+                        data: [42, 28, 19, 15, 12],
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true } }
+                }
+            });
+
+            new Chart(document.getElementById('esiChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ["ESI-1 Critical", "ESI-2 Emergent", "ESI-3 Urgent", "ESI-4 Less Urgent", "ESI-5 Non-Urgent"],
+                    datasets: [{
+                        data: [3, 14, 25, 18, 9],
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#10b981', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 12 } } }
+                }
+            });
+
+            new Chart(document.getElementById('volumeChart'), {
+                type: 'line',
+                data: {
+                    labels: ["6am", "9am", "12pm", "3pm", "6pm", "9pm"],
+                    datasets: [{
+                        label: 'Patient Arrivals',
+                        data: [3, 8, 14, 22, 18, 9],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } }
+                }
+            });
+
+            new Chart(document.getElementById('vitalsChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['BP Systolic', 'HR', 'Temp', 'O₂ Sat %', 'RR'],
+                    datasets: [{
+                        label: 'Average Patient Vitals',
+                        data: [128, 92, 98.6, 96, 18],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } },
+                    scales: { r: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } }
+                }
+            });
+        }
+    </script>
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</body>
+</html>
