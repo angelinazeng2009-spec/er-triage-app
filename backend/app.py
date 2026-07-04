@@ -6,27 +6,15 @@ from db import init_db, insert_patient, get_active_queue, admit_patient, get_all
 
 load_dotenv()
 
-# --- Robust Frontend Directory Resolution ---
+# --- Points directly to the repository root directory where index.html lives ---
 base_dir = os.path.dirname(os.path.realpath(__file__))
-# Try the standard local development path (up one level)
-frontend_dir = os.path.normpath(os.path.join(base_dir, "..", "frontend"))
-
-# Fallback 1: Check if frontend folder is right next to app.py
-if not os.path.exists(os.path.join(frontend_dir, 'index.html')):
-    fallback_path_1 = os.path.join(base_dir, "frontend")
-    if os.path.exists(os.path.join(fallback_path_1, 'index.html')):
-        frontend_dir = fallback_path_1
-    else:
-        # Fallback 2: Check the process current working directory
-        fallback_path_2 = os.path.abspath("frontend")
-        if os.path.exists(os.path.join(fallback_path_2, 'index.html')):
-            frontend_dir = fallback_path_2
+root_dir = os.path.normpath(os.path.join(base_dir, ".."))
 
 app = Flask(
     __name__,
-    template_folder="templates",
-    static_folder=frontend_dir,
-    static_url_path="/frontend",
+    template_folder=root_dir,  # Look for html files in the root dir
+    static_folder=root_dir,    # Look for assets/css/js in the root dir
+    static_url_path="",
 )
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
@@ -145,13 +133,20 @@ def add_cors_headers(response):
 
 @app.route('/')
 def index():
-    # Return the active triage queue as JSON directly on the homepage
-    return jsonify(get_active_queue())
+    # Serve index.html directly from the root directory
+    return send_from_directory(root_dir, 'index.html')
+
+
+@app.route('/landing')
+def landing():
+    # Serve landing.html directly from the root directory
+    return send_from_directory(root_dir, 'landing.html')
+
 
 @app.route('/dashboard')
 def dashboard():
-    # Keep dashboard route compatible by redirecting to the frontend index
-    return redirect('/frontend/index.html')
+    # Redirect to the root index page
+    return redirect('/')
 
 
 @app.route('/api/config')
