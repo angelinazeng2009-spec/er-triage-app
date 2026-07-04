@@ -145,9 +145,8 @@ def add_cors_headers(response):
 
 @app.route('/')
 def index():
-    # Serve the single-page frontend index directly so assets load from /frontend
-    return send_from_directory(frontend_dir, 'index.html')
-
+    # Return the active triage queue as JSON directly on the homepage
+    return jsonify(get_active_queue())
 
 @app.route('/dashboard')
 def dashboard():
