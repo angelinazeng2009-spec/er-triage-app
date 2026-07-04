@@ -481,7 +481,7 @@
             }
         }
 
-        const apiBase = 'http://127.0.0.1:5000';
+        const apiBase = window.location.origin;
 
         async function loadLiveQueue() {
             try {
@@ -835,7 +835,7 @@
             }
 
             try {
-                const apiBase = 'http://127.0.0.1:5000';
+                const apiBase = window.location.origin;
 
                 const response = await fetch(`${apiBase}/api/voice-intake`, {
                     method: 'POST',
