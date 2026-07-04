@@ -1,29 +1,54 @@
 import json
 import random
 import time
-from typing import List
-from pydantic import BaseModel, Field
 
-class TriageOutput(BaseModel):
-    id: str = Field(description="Unique patient identifier, e.g., PT-XXXX")
-    name: str
-    language: str
-    raw_symptoms: str
-    translated_symptoms: str
-    anatomy: List[str]
-    vitals: List[str]
-    urgency_flag: str
-    esi_label: str
-    risk_score: int
-    immediate_action: str
-    differentials: List[str]
-    body_systems: List[str]
-    follow_up_questions: List[str]
-    clarification_summary: str
-    clinical_rationale: str
-    medical_history: str
-    clinical_notes: str
-    timestamp: str
+
+def build_response_schema():
+    return {
+        "type": "object",
+        "properties": {
+            "id": {"type": "string", "description": "Unique patient identifier, e.g., PT-XXXX"},
+            "name": {"type": "string"},
+            "language": {"type": "string"},
+            "raw_symptoms": {"type": "string"},
+            "translated_symptoms": {"type": "string"},
+            "anatomy": {"type": "array", "items": {"type": "string"}},
+            "vitals": {"type": "array", "items": {"type": "string"}},
+            "urgency_flag": {"type": "string"},
+            "esi_label": {"type": "string"},
+            "risk_score": {"type": "integer"},
+            "immediate_action": {"type": "string"},
+            "differentials": {"type": "array", "items": {"type": "string"}},
+            "body_systems": {"type": "array", "items": {"type": "string"}},
+            "follow_up_questions": {"type": "array", "items": {"type": "string"}},
+            "clarification_summary": {"type": "string"},
+            "clinical_rationale": {"type": "string"},
+            "medical_history": {"type": "string"},
+            "clinical_notes": {"type": "string"},
+            "timestamp": {"type": "string"},
+        },
+        "required": [
+            "id",
+            "name",
+            "language",
+            "raw_symptoms",
+            "translated_symptoms",
+            "anatomy",
+            "vitals",
+            "urgency_flag",
+            "esi_label",
+            "risk_score",
+            "immediate_action",
+            "differentials",
+            "body_systems",
+            "follow_up_questions",
+            "clarification_summary",
+            "clinical_rationale",
+            "medical_history",
+            "clinical_notes",
+            "timestamp",
+        ],
+    }
 
 def format_vitals_for_prompt(vitals_obj):
     if not isinstance(vitals_obj, dict):
@@ -73,7 +98,7 @@ def build_gemini_payload(data):
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "responseMimeType": "application/json",
-            "responseSchema": TriageOutput.model_json_schema()
+            "responseSchema": build_response_schema(),
         }
     }
     return payload, generated_id, current_time
