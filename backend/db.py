@@ -2,7 +2,7 @@ import sqlite3
 import json
 import os
 
-DB_PATH = os.environ.get("DB_PATH", os.path.join(os.path.dirname(__file__), "triage.db"))
+DB_PATH = os.environ.get("DB_PATH", "/tmp/triage.db")
 
 COLUMNS = [
     "id", "name", "language", "raw_symptoms", "translated_symptoms",
