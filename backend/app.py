@@ -12,8 +12,8 @@ root_dir = os.path.normpath(os.path.join(base_dir, ".."))
 
 app = Flask(
     __name__,
-    template_folder=root_dir,  # Look for html files in the root dir
-    static_folder=root_dir,    # Look for assets/css/js in the root dir
+    template_folder=os.path.join(root_dir, 'templates'),
+    static_folder=os.path.join(root_dir, 'static'),
     static_url_path="",
 )
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -134,13 +134,13 @@ def add_cors_headers(response):
 @app.route('/')
 def index():
     # Serve index.html directly from the root directory
-    return send_from_directory(root_dir, 'index.html')
+    return send_from_directory(os.path.join(root_dir, 'templates'), 'index.html')
 
 
 @app.route('/landing')
 def landing():
     # Serve landing.html directly from the root directory
-    return send_from_directory(root_dir, 'landing.html')
+    return send_from_directory(os.path.join(root_dir, 'templates'), 'landing.html')
 
 
 @app.route('/dashboard')
