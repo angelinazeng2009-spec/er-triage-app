@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect
 import os, time, requests, json, base64
 from dotenv import load_dotenv
 from triage import build_gemini_payload, process_triage_response
@@ -6,7 +6,14 @@ from db import init_db, insert_patient, get_active_queue, admit_patient, get_all
 
 load_dotenv()
 
-app = Flask(__name__, template_folder="templates", static_folder=".")
+base_dir = os.path.dirname(os.path.realpath(__file__))
+frontend_dir = os.path.normpath(os.path.join(base_dir, "..", "frontend"))
+app = Flask(
+    __name__,
+    template_folder="templates",
+    static_folder=frontend_dir,
+    static_url_path="/frontend",
+)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 API_KEY = os.getenv("GEMINI_API_KEY", "")
@@ -124,12 +131,14 @@ def add_cors_headers(response):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Serve the single-page frontend index directly so assets load from /frontend
+    return send_from_directory(frontend_dir, 'index.html')
 
 
 @app.route('/dashboard')
 def dashboard():
-    return render_template('index.html')
+    # Keep dashboard route compatible by redirecting to the frontend index
+    return redirect('/frontend/index.html')
 
 
 @app.route('/api/config')
