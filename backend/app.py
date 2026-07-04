@@ -6,8 +6,22 @@ from db import init_db, insert_patient, get_active_queue, admit_patient, get_all
 
 load_dotenv()
 
+# --- Robust Frontend Directory Resolution ---
 base_dir = os.path.dirname(os.path.realpath(__file__))
+# Try the standard local development path (up one level)
 frontend_dir = os.path.normpath(os.path.join(base_dir, "..", "frontend"))
+
+# Fallback 1: Check if frontend folder is right next to app.py
+if not os.path.exists(os.path.join(frontend_dir, 'index.html')):
+    fallback_path_1 = os.path.join(base_dir, "frontend")
+    if os.path.exists(os.path.join(fallback_path_1, 'index.html')):
+        frontend_dir = fallback_path_1
+    else:
+        # Fallback 2: Check the process current working directory
+        fallback_path_2 = os.path.abspath("frontend")
+        if os.path.exists(os.path.join(fallback_path_2, 'index.html')):
+            frontend_dir = fallback_path_2
+
 app = Flask(
     __name__,
     template_folder="templates",
