@@ -12,8 +12,8 @@ root_dir = os.path.normpath(os.path.join(base_dir, ".."))
 
 app = Flask(
     __name__,
-    template_folder=os.path.join(root_dir, 'templates'),
-    static_folder=os.path.join(root_dir, 'static'),
+    template_folder='templates',  # Flask looks in backend/templates
+    static_folder='.',            # Flask looks in the backend folder for static files
     static_url_path="",
 )
 app.config["TEMPLATES_AUTO_RELOAD"] = True
