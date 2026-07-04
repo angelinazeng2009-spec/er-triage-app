@@ -488,7 +488,9 @@
                 const response = await fetch(`${apiBase}/api/queue`);
                 if (response.ok) {
                     triageQueue = await response.json();
-                    allPatientHistory = [...triageQueue];
+                    // Merge into history without duplicates
+                    const existingIds = new Set(allPatientHistory.map(p => p.id));
+                    triageQueue.forEach(p => { if (!existingIds.has(p.id)) allPatientHistory.push(p); });
                     updatePhysicianTelemetryView();
                     updateAnalyticsMetrics();
                 }
@@ -951,6 +953,9 @@
                     console.error("Triage pipeline error", errorMessage, result);
                 } else {
                     renderSingleOutputPanel(result.patient);
+                    if (!allPatientHistory.find(p => p.id === result.patient.id)) {
+                        allPatientHistory.push(result.patient);
+                    }
                     await loadLiveQueue();
                 }
             } catch (err) {
